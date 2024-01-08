@@ -1,4 +1,4 @@
-import ABIRailgunLogic_LegacyEvents from './RailgunLogic_LegacyEvents.json';
-import ABIRailgunSmartWallet_Legacy_PreMar23 from './RailgunSmartWallet_Legacy_PreMar23.json';
+import ABIDopLogic_LegacyEvents from './DopLogic_LegacyEvents.json';
+import ABIDopSmartWallet_Legacy_PreMar23 from './DopSmartWallet_Legacy_PreMar23.json';
 
-export { ABIRailgunLogic_LegacyEvents, ABIRailgunSmartWallet_Legacy_PreMar23 };
+export { ABIDopLogic_LegacyEvents, ABIDopSmartWallet_Legacy_PreMar23 };

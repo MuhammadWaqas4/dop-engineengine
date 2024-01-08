@@ -223,7 +223,7 @@ export type CommitmentPreimageLegacyStructOutput = [
   value: bigint,
 ] & { npk: bigint; token: TokenDataLegacyStructOutput; value: bigint };
 
-export declare namespace RailgunLogic {
+export declare namespace DopLogic {
   export type CommitmentCiphertextLegacyStruct = {
     ciphertext: [BigNumberish, BigNumberish, BigNumberish, BigNumberish];
     ephemeralKeys: [BigNumberish, BigNumberish];
@@ -241,7 +241,7 @@ export declare namespace RailgunLogic {
   };
 }
 
-export interface RailgunSmartWallet_Legacy_PreMar23Interface extends Interface {
+export interface DopSmartWallet_Legacy_PreMar23Interface extends Interface {
   getFunction(
     nameOrSignature:
       | 'ZERO_VALUE'
@@ -257,7 +257,7 @@ export interface RailgunSmartWallet_Legacy_PreMar23Interface extends Interface {
       | 'hashBoundParams'
       | 'hashCommitment'
       | 'hashLeftRight'
-      | 'initializeRailgunLogic'
+      | 'initializeDopLogic'
       | 'lastEventBlock'
       | 'merkleRoot'
       | 'nextLeafIndex'
@@ -334,7 +334,7 @@ export interface RailgunSmartWallet_Legacy_PreMar23Interface extends Interface {
   ): string;
   encodeFunctionData(functionFragment: 'hashLeftRight', values: [BytesLike, BytesLike]): string;
   encodeFunctionData(
-    functionFragment: 'initializeRailgunLogic',
+    functionFragment: 'initializeDopLogic',
     values: [AddressLike, BigNumberish, BigNumberish, BigNumberish, AddressLike],
   ): string;
   encodeFunctionData(functionFragment: 'lastEventBlock', values?: undefined): string;
@@ -390,7 +390,7 @@ export interface RailgunSmartWallet_Legacy_PreMar23Interface extends Interface {
   decodeFunctionResult(functionFragment: 'hashBoundParams', data: BytesLike): Result;
   decodeFunctionResult(functionFragment: 'hashCommitment', data: BytesLike): Result;
   decodeFunctionResult(functionFragment: 'hashLeftRight', data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: 'initializeRailgunLogic', data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: 'initializeDopLogic', data: BytesLike): Result;
   decodeFunctionResult(functionFragment: 'lastEventBlock', data: BytesLike): Result;
   decodeFunctionResult(functionFragment: 'merkleRoot', data: BytesLike): Result;
   decodeFunctionResult(functionFragment: 'nextLeafIndex', data: BytesLike): Result;
@@ -609,19 +609,19 @@ export namespace CommitmentBatchEvent {
     treeNumber: BigNumberish,
     startPosition: BigNumberish,
     hash: BigNumberish[],
-    ciphertext: RailgunLogic.CommitmentCiphertextLegacyStruct[],
+    ciphertext: DopLogic.CommitmentCiphertextLegacyStruct[],
   ];
   export type OutputTuple = [
     treeNumber: bigint,
     startPosition: bigint,
     hash: bigint[],
-    ciphertext: RailgunLogic.CommitmentCiphertextLegacyStructOutput[],
+    ciphertext: DopLogic.CommitmentCiphertextLegacyStructOutput[],
   ];
   export interface OutputObject {
     treeNumber: bigint;
     startPosition: bigint;
     hash: bigint[];
-    ciphertext: RailgunLogic.CommitmentCiphertextLegacyStructOutput[];
+    ciphertext: DopLogic.CommitmentCiphertextLegacyStructOutput[];
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -667,12 +667,12 @@ export namespace NullifiersEvent {
   export type LogDescription = TypedLogDescription<Event>;
 }
 
-export interface RailgunSmartWallet_Legacy_PreMar23 extends BaseContract {
+export interface DopSmartWallet_Legacy_PreMar23 extends BaseContract {
   connect(runner?: ContractRunner | null): BaseContract;
   attach(addressOrName: AddressLike): this;
   deployed(): Promise<this>;
 
-  interface: RailgunSmartWallet_Legacy_PreMar23Interface;
+  interface: DopSmartWallet_Legacy_PreMar23Interface;
 
   queryFilter<TCEvent extends TypedContractEvent>(
     event: TCEvent,
@@ -755,7 +755,7 @@ export interface RailgunSmartWallet_Legacy_PreMar23 extends BaseContract {
 
   hashLeftRight: TypedContractMethod<[_left: BytesLike, _right: BytesLike], [string], 'view'>;
 
-  initializeRailgunLogic: TypedContractMethod<
+  initializeDopLogic: TypedContractMethod<
     [
       _treasury: AddressLike,
       _shieldFee: BigNumberish,
@@ -893,7 +893,7 @@ export interface RailgunSmartWallet_Legacy_PreMar23 extends BaseContract {
     nameOrSignature: 'hashLeftRight',
   ): TypedContractMethod<[_left: BytesLike, _right: BytesLike], [string], 'view'>;
   getFunction(
-    nameOrSignature: 'initializeRailgunLogic',
+    nameOrSignature: 'initializeDopLogic',
   ): TypedContractMethod<
     [
       _treasury: AddressLike,

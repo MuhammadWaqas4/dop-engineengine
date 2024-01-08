@@ -1,8 +1,8 @@
 {
   "name": "dop-engineengine",
   "version": "5.3.2",
-  "description": "Wallet framework for RAILGUN smart contracts and private balances on Ethereum and more.",
-  "author": "RAILGUN Contributors",
+  "description": "Wallet framework for DOP smart contracts and private balances on Ethereum and more.",
+  "author": "DOP Contributors",
   "license": "MIT",
   "main": "dist/index.js",
   "scripts": {
@@ -27,11 +27,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Railgun-Community/engine.git"
+    "url": "git+https://github.com/MuhammadWaqas4/dop-engine.git"
   },
-  "homepage": "https://github.com/Railgun-Community/engine#readme",
+  "homepage": "https://github.com/MuhammadWaqas4/dop-engine#readme",
   "bugs": {
-    "url": "https://github.com/Railgun-Community/engine/issues"
+    "url": "https://github.com/MuhammadWaqas4/dop-engine/issues"
   },
   "dependencies": {
     "@noble/ed25519": "^1.7.1",
