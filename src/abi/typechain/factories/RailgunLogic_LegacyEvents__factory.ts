@@ -4,9 +4,9 @@
 
 import { Contract, Interface, type ContractRunner } from "ethers";
 import type {
-  RailgunLogic_LegacyEvents,
-  RailgunLogic_LegacyEventsInterface,
-} from "../RailgunLogic_LegacyEvents";
+  DopLogic_LegacyEvents,
+  DopLogic_LegacyEventsInterface,
+} from "../DopLogic_LegacyEvents";
 
 const _abi = [
   {
@@ -1748,19 +1748,19 @@ const _abi = [
   },
 ] as const;
 
-export class RailgunLogic_LegacyEvents__factory {
+export class DopLogic_LegacyEvents__factory {
   static readonly abi = _abi;
-  static createInterface(): RailgunLogic_LegacyEventsInterface {
-    return new Interface(_abi) as RailgunLogic_LegacyEventsInterface;
+  static createInterface(): DopLogic_LegacyEventsInterface {
+    return new Interface(_abi) as DopLogic_LegacyEventsInterface;
   }
   static connect(
     address: string,
     runner?: ContractRunner | null
-  ): RailgunLogic_LegacyEvents {
+  ): DopLogic_LegacyEvents {
     return new Contract(
       address,
       _abi,
       runner
-    ) as unknown as RailgunLogic_LegacyEvents;
+    ) as unknown as DopLogic_LegacyEvents;
   }
 }

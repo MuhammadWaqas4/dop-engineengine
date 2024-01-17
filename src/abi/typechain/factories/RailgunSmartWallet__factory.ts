@@ -4,9 +4,9 @@
 
 import { Contract, Interface, type ContractRunner } from "ethers";
 import type {
-  RailgunSmartWallet,
-  RailgunSmartWalletInterface,
-} from "../RailgunSmartWallet";
+  DopSmartWallet,
+  DopSmartWalletInterface,
+} from "../DopSmartWallet";
 
 const _abi = [
   {
@@ -2571,15 +2571,15 @@ const _abi = [
   },
 ] as const;
 
-export class RailgunSmartWallet__factory {
+export class DopSmartWallet__factory {
   static readonly abi = _abi;
-  static createInterface(): RailgunSmartWalletInterface {
-    return new Interface(_abi) as RailgunSmartWalletInterface;
+  static createInterface(): DopSmartWalletInterface {
+    return new Interface(_abi) as DopSmartWalletInterface;
   }
   static connect(
     address: string,
     runner?: ContractRunner | null
-  ): RailgunSmartWallet {
-    return new Contract(address, _abi, runner) as unknown as RailgunSmartWallet;
+  ): DopSmartWallet {
+    return new Contract(address, _abi, runner) as unknown as DopSmartWallet;
   }
 }

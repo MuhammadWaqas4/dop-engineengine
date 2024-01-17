@@ -27,7 +27,7 @@ let shield: ShieldNote;
 
 describe('Note/ShieldNote', () => {
   it('Should get expected signature message for shieldPrivateKey', () => {
-    expect(ShieldNote.getShieldPrivateKeySignatureMessage()).to.equal('RAILGUN_SHIELD');
+    expect(ShieldNote.getShieldPrivateKeySignatureMessage()).to.equal('DOP_SHIELD');
   });
 
   it('Should create shield note', () => {

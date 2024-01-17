@@ -1,23 +1,22 @@
-[![Unit Tests](https://github.com/Railgun-Community/engine/actions/workflows/unit-tests.yml/badge.svg?branch=master)](https://github.com/Railgun-Community/engine/actions)
-[![Integration Tests](https://github.com/Railgun-Community/engine/actions/workflows/integration-tests.yml/badge.svg?branch=master)](https://github.com/Railgun-Community/engine/actions)
 
-# RAILGUN Engine SDK
 
-Wallet framework for RAILGUN smart contracts and private balances on Ethereum and more.
+# DOP Engine SDK
 
-Read about RAILGUN: www.railgun.org
+Wallet framework for DOP smart contracts and private balances on Ethereum and more.
 
-For simple implementations, use [RAILGUN Wallet SDK](https://github.com/Railgun-Community/wallet).
+Read about DOP: www.railgun.org
+
+For simple implementations, use [DOP Wallet SDK](https://github.com/MuhammadWaqas4/dop-wallet-old).
 
 ## Installing
 
 ### With NPM
 
-`npm install @railgun-community/engine`
+`npm install dop-engineengine`
 
 ### With Yarn
 
-`yarn add @railgun-community/engine`
+`yarn add dop-engineengine`
 
 ## Developing
 
@@ -46,7 +45,7 @@ For simple implementations, use [RAILGUN Wallet SDK](https://github.com/Railgun-
 
 Clone the contracts repo
 
-`git clone git@github.com:Railgun-Privacy/contract.git`
+`clone github repo: https://github.com/Waleed-Shafiq/dop-contracts`
 
 Start hardhat node from the contract repo and leave it running
 

@@ -167,7 +167,7 @@ export type TransactionStructOutput = [
   overrideOutput: string;
 };
 
-export interface RailgunLogic_LegacyEventsInterface extends Interface {
+export interface DopLogic_LegacyEventsInterface extends Interface {
   getFunction(
     nameOrSignature:
       | "SNARK_BYPASS"
@@ -185,7 +185,7 @@ export interface RailgunLogic_LegacyEventsInterface extends Interface {
       | "hashBoundParams"
       | "hashCommitment"
       | "hashLeftRight"
-      | "initializeRailgunLogic"
+      | "initializeDopLogic"
       | "merkleRoot"
       | "nftFee"
       | "nullifiers"
@@ -281,7 +281,7 @@ export interface RailgunLogic_LegacyEventsInterface extends Interface {
     values: [BigNumberish, BigNumberish]
   ): string;
   encodeFunctionData(
-    functionFragment: "initializeRailgunLogic",
+    functionFragment: "initializeDopLogic",
     values: [AddressLike, BigNumberish, BigNumberish, BigNumberish, AddressLike]
   ): string;
   encodeFunctionData(
@@ -395,7 +395,7 @@ export interface RailgunLogic_LegacyEventsInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "initializeRailgunLogic",
+    functionFragment: "initializeDopLogic",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "merkleRoot", data: BytesLike): Result;
@@ -608,12 +608,12 @@ export namespace VerifyingKeySetEvent {
   export type LogDescription = TypedLogDescription<Event>;
 }
 
-export interface RailgunLogic_LegacyEvents extends BaseContract {
+export interface DopLogic_LegacyEvents extends BaseContract {
   connect(runner?: ContractRunner | null): BaseContract;
   attach(addressOrName: AddressLike): this;
   deployed(): Promise<this>;
 
-  interface: RailgunLogic_LegacyEventsInterface;
+  interface: DopLogic_LegacyEventsInterface;
 
   queryFilter<TCEvent extends TypedContractEvent>(
     event: TCEvent,
@@ -729,7 +729,7 @@ export interface RailgunLogic_LegacyEvents extends BaseContract {
     "view"
   >;
 
-  initializeRailgunLogic: TypedContractMethod<
+  initializeDopLogic: TypedContractMethod<
     [
       _treasury: AddressLike,
       _depositFee: BigNumberish,
@@ -908,7 +908,7 @@ export interface RailgunLogic_LegacyEvents extends BaseContract {
     "view"
   >;
   getFunction(
-    nameOrSignature: "initializeRailgunLogic"
+    nameOrSignature: "initializeDopLogic"
   ): TypedContractMethod<
     [
       _treasury: AddressLike,

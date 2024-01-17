@@ -251,7 +251,7 @@ abstract class AbstractWallet extends EventEmitter {
   }
 
   /**
-   * Return masterPublicKey and viewingPublicKey used to encode RAILGUN addresses
+   * Return masterPublicKey and viewingPublicKey used to encode DOP addresses
    * @returns {AddressKeys}
    */
   get addressKeys(): AddressKeys {
@@ -263,7 +263,7 @@ abstract class AbstractWallet extends EventEmitter {
 
   /**
    * Encode address from (MPK, VK) + chain
-   * @returns {string} bech32 encoded RAILGUN address
+   * @returns {string} bech32 encoded DOP address
    */
   getAddress(chain?: Chain): string {
     return encodeAddress({ ...this.addressKeys, chain });

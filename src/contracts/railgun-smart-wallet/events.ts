@@ -23,10 +23,10 @@ import {
   ShieldEvent,
   TransactEvent,
   UnshieldEvent,
-} from '../../abi/typechain/RailgunSmartWallet';
+} from '../../abi/typechain/DopSmartWallet';
 import { serializeTokenData, serializePreImage, getNoteHash } from '../../note/note-util';
-import { ShieldEvent as ShieldEvent_LegacyShield_PreMar23 } from '../../abi/typechain/RailgunSmartWallet_Legacy_PreMar23';
-import { ABIRailgunSmartWallet_Legacy_PreMar23 } from '../../abi/legacy/abi-legacy';
+import { ShieldEvent as ShieldEvent_LegacyShield_PreMar23 } from '../../abi/typechain/DopSmartWallet_Legacy_PreMar23';
+import { ABIDopSmartWallet_Legacy_PreMar23 } from '../../abi/legacy/abi-legacy';
 
 /**
  * Parse event data for database
@@ -215,7 +215,7 @@ export async function processShieldEvents_LegacyShield_PreMar23(
   // So, we need to custom-decode the legacy Shield event here.
 
   const iface = new Interface(
-    ABIRailgunSmartWallet_Legacy_PreMar23.filter((fragment) => fragment.type === 'event'),
+    ABIDopSmartWallet_Legacy_PreMar23.filter((fragment) => fragment.type === 'event'),
   );
   // eslint-disable-next-line no-restricted-syntax
   for (const log of logs) {

@@ -6,8 +6,8 @@ import { groth16 } from 'snarkjs';
 import { testArtifactsGetter } from '../../../test/helper.test';
 import { Groth16 } from '../../../prover/prover';
 import { Chain, ChainType } from '../../../models/engine-types';
-import { RailgunEngine } from '../../../railgun-engine';
-import { RailgunSmartWalletContract } from '../railgun-smart-wallet';
+import { DopEngine } from '../../../railgun-engine';
+import { DopSmartWalletContract } from '../railgun-smart-wallet';
 import { ContractStore } from '../../contract-store';
 import { PollingJsonRpcProvider } from '../../../provider/polling-json-rpc-provider';
 import { CommitmentEvent } from '../../../models/event-types';
@@ -19,8 +19,8 @@ const { expect } = chai;
 
 let provider: PollingJsonRpcProvider;
 let chain: Chain;
-let engine: RailgunEngine;
-let railgunSmartWalletContract: RailgunSmartWalletContract;
+let engine: DopEngine;
+let railgunSmartWalletContract: DopSmartWalletContract;
 
 const testHistoricalEventsForRange = async (startBlock: number, endBlock: number) => {
   let foundShieldEvents = 0;
@@ -73,11 +73,11 @@ const testHistoricalEventsForRange = async (startBlock: number, endBlock: number
   expect(foundNullifiers).to.be.greaterThanOrEqual(1);
 };
 
-describe('Railgun Smart Wallet - Live events', function runTests() {
+describe('Dop Smart Wallet - Live events', function runTests() {
   this.timeout(20000);
 
   beforeEach(async () => {
-    engine = new RailgunEngine(
+    engine = new DopEngine(
       'Test RSW',
       memdown(),
       testArtifactsGetter,

@@ -79,7 +79,7 @@ function encodeAddress(addressData: AddressData): string {
 }
 
 /**
- * @param address - RAILGUN encoded address
+ * @param address - DOP encoded address
  * @returns
  */
 function decodeAddress(address: string): AddressData {

@@ -41,7 +41,7 @@ export abstract class ShieldNote {
    */
   static getShieldPrivateKeySignatureMessage() {
     // DO NOT MODIFY THIS CONSTANT.
-    return 'RAILGUN_SHIELD';
+    return 'DOP_SHIELD';
   }
 
   private getNotePublicKey(): bigint {

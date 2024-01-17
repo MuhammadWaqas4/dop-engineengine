@@ -1,17 +1,17 @@
 import { Chain } from '../models/engine-types';
-import { RailgunSmartWalletContract } from './railgun-smart-wallet/railgun-smart-wallet';
+import { DopSmartWalletContract } from './railgun-smart-wallet/railgun-smart-wallet';
 import { RelayAdaptContract } from './relay-adapt/relay-adapt';
 
 export class ContractStore {
-  static readonly railgunSmartWalletContracts: RailgunSmartWalletContract[][] = [];
+  static readonly railgunSmartWalletContracts: DopSmartWalletContract[][] = [];
 
   static readonly relayAdaptContracts: RelayAdaptContract[][] = [];
 
-  static getRailgunSmartWalletContract(chain: Chain): RailgunSmartWalletContract {
+  static getDopSmartWalletContract(chain: Chain): DopSmartWalletContract {
     try {
       return this.railgunSmartWalletContracts[chain.type][chain.id];
     } catch {
-      throw new Error('No RailgunSmartWalletContract loaded.');
+      throw new Error('No DopSmartWalletContract loaded.');
     }
   }
 

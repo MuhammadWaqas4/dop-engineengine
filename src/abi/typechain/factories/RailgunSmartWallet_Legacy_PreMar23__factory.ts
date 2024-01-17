@@ -4,9 +4,9 @@
 
 import { Contract, Interface, type ContractRunner } from "ethers";
 import type {
-  RailgunSmartWallet_Legacy_PreMar23,
-  RailgunSmartWallet_Legacy_PreMar23Interface,
-} from "../RailgunSmartWallet_Legacy_PreMar23";
+  DopSmartWallet_Legacy_PreMar23,
+  DopSmartWallet_Legacy_PreMar23Interface,
+} from "../DopSmartWallet_Legacy_PreMar23";
 
 const _abi = [
   {
@@ -2555,19 +2555,19 @@ const _abi = [
   },
 ] as const;
 
-export class RailgunSmartWallet_Legacy_PreMar23__factory {
+export class DopSmartWallet_Legacy_PreMar23__factory {
   static readonly abi = _abi;
-  static createInterface(): RailgunSmartWallet_Legacy_PreMar23Interface {
-    return new Interface(_abi) as RailgunSmartWallet_Legacy_PreMar23Interface;
+  static createInterface(): DopSmartWallet_Legacy_PreMar23Interface {
+    return new Interface(_abi) as DopSmartWallet_Legacy_PreMar23Interface;
   }
   static connect(
     address: string,
     runner?: ContractRunner | null
-  ): RailgunSmartWallet_Legacy_PreMar23 {
+  ): DopSmartWallet_Legacy_PreMar23 {
     return new Contract(
       address,
       _abi,
       runner
-    ) as unknown as RailgunSmartWallet_Legacy_PreMar23;
+    ) as unknown as DopSmartWallet_Legacy_PreMar23;
   }
 }

@@ -3,11 +3,11 @@ import chaiAsPromised from 'chai-as-promised';
 import { Contract, JsonRpcProvider, Wallet } from 'ethers';
 import memdown from 'memdown';
 import { groth16 } from 'snarkjs';
-import { RailgunEngine } from '../railgun-engine';
+import { DopEngine } from '../railgun-engine';
 import { abi as erc20Abi } from '../test/test-erc20-abi.test';
 import { config } from '../test/config.test';
 import { abi as erc721Abi } from '../test/test-erc721-abi.test';
-import { RailgunWallet } from '../wallet/railgun-wallet';
+import { DopWallet } from '../wallet/railgun-wallet';
 import {
   awaitMultipleScans,
   awaitScan,
@@ -20,7 +20,7 @@ import {
 import { ShieldNoteERC20 } from '../note/erc20/shield-note-erc20';
 import { MerkleTree } from '../merkletree/merkletree';
 import { ByteLength, formatToByteLength, hexToBigInt, hexToBytes, randomHex } from '../utils/bytes';
-import { RailgunSmartWalletContract } from '../contracts/railgun-smart-wallet/railgun-smart-wallet';
+import { DopSmartWalletContract } from '../contracts/railgun-smart-wallet/railgun-smart-wallet';
 import {
   CommitmentType,
   LegacyGeneratedCommitment,
@@ -48,16 +48,16 @@ chai.use(chaiAsPromised);
 
 let provider: PollingJsonRpcProvider;
 let chain: Chain;
-let engine: RailgunEngine;
+let engine: DopEngine;
 let ethersWallet: Wallet;
 let snapshot: number;
 let token: TestERC20;
 let nft: TestERC721;
-let wallet: RailgunWallet;
-let wallet2: RailgunWallet;
+let wallet: DopWallet;
+let wallet2: DopWallet;
 let merkleTree: MerkleTree;
 let tokenAddress: string;
-let railgunSmartWalletContract: RailgunSmartWalletContract;
+let railgunSmartWalletContract: DopSmartWalletContract;
 
 const erc20Address = config.contracts.rail;
 const nftAddress = config.contracts.testERC721;
@@ -66,7 +66,7 @@ const testMnemonic = config.mnemonic;
 const testEncryptionKey = config.encryptionKey;
 
 const shieldTestTokens = async (railgunAddress: string, value: bigint) => {
-  const mpk = RailgunEngine.decodeAddress(railgunAddress).masterPublicKey;
+  const mpk = DopEngine.decodeAddress(railgunAddress).masterPublicKey;
   const receiverViewingPublicKey = wallet.getViewingKeyPair().pubkey;
   const random = randomHex(16);
   const shield = new ShieldNoteERC20(mpk, random, value, await token.getAddress());
@@ -85,11 +85,11 @@ const shieldTestTokens = async (railgunAddress: string, value: bigint) => {
   ]);
 };
 
-describe('RailgunEngine', function test() {
+describe('DopEngine', function test() {
   this.timeout(20000);
 
   beforeEach(async () => {
-    engine = new RailgunEngine(
+    engine = new DopEngine(
       'Test Wallet',
       memdown(),
       testArtifactsGetter,

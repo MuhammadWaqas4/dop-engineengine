@@ -1,14 +1,14 @@
 import type { AbstractLevelDOWN } from 'abstract-leveldown';
 import EventEmitter from 'events';
 import { FallbackProvider } from 'ethers';
-import { RailgunSmartWalletContract } from './contracts/railgun-smart-wallet/railgun-smart-wallet';
+import { DopSmartWalletContract } from './contracts/railgun-smart-wallet/railgun-smart-wallet';
 import { RelayAdaptContract } from './contracts/relay-adapt/relay-adapt';
 import { Database, DatabaseNamespace } from './database/database';
 import { MerkleTree } from './merkletree/merkletree';
 import { Prover } from './prover/prover';
 import { encodeAddress, decodeAddress } from './key-derivation/bech32';
 import { ByteLength, formatToByteLength, hexlify } from './utils/bytes';
-import { RailgunWallet } from './wallet/railgun-wallet';
+import { DopWallet } from './wallet/railgun-wallet';
 import EngineDebug from './debugger/debugger';
 import { Chain, EngineDebugger } from './models/engine-types';
 import {
@@ -37,7 +37,7 @@ import { PollingJsonRpcProvider } from './provider/polling-json-rpc-provider';
 import { assertIsPollingProvider } from './provider/polling-util';
 import { isDefined } from './utils/is-defined';
 
-class RailgunEngine extends EventEmitter {
+class DopEngine extends EventEmitter {
   readonly db: Database;
 
   readonly merkletrees: MerkleTree[][] = [];
@@ -359,7 +359,7 @@ class RailgunEngine extends EventEmitter {
     );
 
     if (!railgunSmartWalletContract.contract.runner?.provider) {
-      throw new Error('Requires provider for RailgunSmartWallet contract');
+      throw new Error('Requires provider for DopSmartWallet contract');
     }
     const latestBlock = await railgunSmartWalletContract.contract.runner.provider.getBlockNumber();
     const totalBlocksToScan = latestBlock - startScanningBlockSlowScan;
@@ -431,7 +431,7 @@ class RailgunEngine extends EventEmitter {
   async clearSyncedMerkletreeLeaves(chain: Chain) {
     const merkletree = this.getMerkletreeForChain(chain);
     await merkletree.clearLeavesFromDB();
-    await this.db.clearNamespace(RailgunEngine.getLastSyncedBlockDBPrefix(chain));
+    await this.db.clearNamespace(DopEngine.getLastSyncedBlockDBPrefix(chain));
   }
 
   async clearMerkletreeAndWallets(chain: Chain) {
@@ -519,7 +519,7 @@ class RailgunEngine extends EventEmitter {
     // Create proxy contract instance
     ContractStore.railgunSmartWalletContracts[chain.type] ??= [];
     ContractStore.railgunSmartWalletContracts[chain.type][chain.id] =
-      new RailgunSmartWalletContract(
+      new DopSmartWalletContract(
         railgunSmartWalletContractAddress,
         defaultProvider,
         pollingProvider,
@@ -621,7 +621,7 @@ class RailgunEngine extends EventEmitter {
    * @param lastSyncedBlock - last synced block
    */
   setLastSyncedBlock(chain: Chain, lastSyncedBlock: number): Promise<void> {
-    return this.db.put(RailgunEngine.getLastSyncedBlockDBPrefix(chain), lastSyncedBlock, 'utf8');
+    return this.db.put(DopEngine.getLastSyncedBlockDBPrefix(chain), lastSyncedBlock, 'utf8');
   }
 
   /**
@@ -631,7 +631,7 @@ class RailgunEngine extends EventEmitter {
    */
   getLastSyncedBlock(chain: Chain): Promise<Optional<number>> {
     return this.db
-      .get(RailgunEngine.getLastSyncedBlockDBPrefix(chain), 'utf8')
+      .get(DopEngine.getLastSyncedBlockDBPrefix(chain), 'utf8')
       .then((val: string) => parseInt(val, 10))
       .catch(() => Promise.resolve(undefined));
   }
@@ -646,7 +646,7 @@ class RailgunEngine extends EventEmitter {
 
   setMerkletreeHistoryVersion(chain: Chain, merkletreeHistoryVersion: number): Promise<void> {
     return this.db.put(
-      RailgunEngine.getMerkletreeHistoryVersionDBPrefix(chain),
+      DopEngine.getMerkletreeHistoryVersionDBPrefix(chain),
       merkletreeHistoryVersion,
       'utf8',
     );
@@ -654,7 +654,7 @@ class RailgunEngine extends EventEmitter {
 
   getMerkletreeHistoryVersion(chain: Chain): Promise<Optional<number>> {
     return this.db
-      .get(RailgunEngine.getMerkletreeHistoryVersionDBPrefix(chain), 'utf8')
+      .get(DopEngine.getMerkletreeHistoryVersionDBPrefix(chain), 'utf8')
       .then((val: string) => parseInt(val, 10))
       .catch(() => Promise.resolve(undefined));
   }
@@ -767,11 +767,11 @@ class RailgunEngine extends EventEmitter {
    * @param {string} id - wallet ID
    * @returns id
    */
-  async loadExistingWallet(encryptionKey: string, id: string): Promise<RailgunWallet> {
+  async loadExistingWallet(encryptionKey: string, id: string): Promise<DopWallet> {
     if (isDefined(this.wallets[id])) {
-      return this.wallets[id] as RailgunWallet;
+      return this.wallets[id] as DopWallet;
     }
-    const wallet = await RailgunWallet.loadExisting(this.db, encryptionKey, id);
+    const wallet = await DopWallet.loadExisting(this.db, encryptionKey, id);
     this.loadWallet(wallet);
     return wallet;
   }
@@ -808,8 +808,8 @@ class RailgunEngine extends EventEmitter {
     mnemonic: string,
     index: number = 0,
     creationBlockNumbers: Optional<number[][]> = undefined,
-  ): Promise<RailgunWallet> {
-    const wallet = await RailgunWallet.fromMnemonic(
+  ): Promise<DopWallet> {
+    const wallet = await DopWallet.fromMnemonic(
       this.db,
       encryptionKey,
       mnemonic,
@@ -896,4 +896,4 @@ class RailgunEngine extends EventEmitter {
   relayAdaptContracts = ContractStore.relayAdaptContracts;
 }
 
-export { RailgunEngine };
+export { DopEngine };

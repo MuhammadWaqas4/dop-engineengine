@@ -88,7 +88,7 @@ export class Prover {
   }
 
   /**
-   * Used to set Groth16 implementation from RAILGUN Native Prover.
+   * Used to set Groth16 implementation from DOP Native Prover.
    */
   setNativeProverGroth16(nativeProve: NativeProve, circuits: { [name: string]: number }) {
     const circuitIdForInputsOutputs = (inputs: number, outputs: number): number => {
