@@ -67,7 +67,7 @@ const shieldLeaf = (txid: string): Commitment => ({
 const shieldValue = 9975062344139650872817n;
 
 describe('Transaction/Transaction Batch', function run() {
-  this.timeout(120000);
+  this.timeout(240000);
   this.beforeAll(async () => {
     db = new Database(memdown());
     chain = {

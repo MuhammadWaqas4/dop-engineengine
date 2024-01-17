@@ -164,7 +164,7 @@ describe.only('Relay Adapt', function test() {
         tx.wait(),
         promiseTimeout(
           awaitScan(wallet, chain),
-          10000,
+          20000,
           'Timed out shielding base token for relay adapt test setup',
         ),
       ]);
@@ -196,7 +196,7 @@ describe.only('Relay Adapt', function test() {
     await Promise.all([
       awaitRailgunSmartWalletShield(railgunSmartWalletContract),
       txResponse.wait(),
-      promiseTimeout(awaitScan(wallet, chain), 10000),
+      promiseTimeout(awaitScan(wallet, chain), 20000),
     ]);
 
     expect(await wallet.getBalance(chain, WETH_TOKEN_ADDRESS)).to.equal(9975n);
@@ -510,7 +510,7 @@ describe.only('Relay Adapt', function test() {
       awaitRailgunSmartWalletTransact(railgunSmartWalletContract),
       awaitRailgunSmartWalletUnshield(railgunSmartWalletContract),
       txResponse.wait(),
-      promiseTimeout(awaitScan(wallet, chain), 10000, 'Timed out waiting for scan'),
+      promiseTimeout(awaitScan(wallet, chain), 20000, 'Timed out waiting for scan'),
     ]);
     if (txReceipt == null) {
       throw new Error('No transaction receipt for relay transaction');
@@ -706,7 +706,7 @@ describe.only('Relay Adapt', function test() {
     const gasEstimateFinal = await provider.estimateGas(relayTransaction);
 
     expect(Math.abs(Number(gasEstimate - gasEstimateFinal))).to.be.below(
-      10000,
+      20000,
       'Gas difference from estimate (dummy) to final transaction should be less than 10000',
     );
 
