@@ -16,17 +16,17 @@ import { ChainType } from '../../models/engine-types';
 import { AddressData } from '../../key-derivation/bech32';
 import { ViewingKeyPair } from '../../key-derivation/wallet-node';
 import { TransactNote } from '../../note/transact-note';
-import { RailgunEngine } from '../../railgun-engine';
+import { DopEngine } from '../../dop-engine';
 import { TXO, TreeBalance } from '../../models';
 import { getTokenDataERC20 } from '../../note/note-util';
 
-const addressData1 = RailgunEngine.decodeAddress(
+const addressData1 = DopEngine.decodeAddress(
   '0zk1qyqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqunpd9kxwatwqyqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqhshkca',
 );
-const addressData2 = RailgunEngine.decodeAddress(
+const addressData2 = DopEngine.decodeAddress(
   '0zk1qyqqqqdl645pcpreh6dga7xa3w4dm9c3tzv6ntesk0fy2kzr476pkunpd9kxwatw8qqqqqdl645pcpreh6dga7xa3w4dm9c3tzv6ntesk0fy2kzr476pkcsu8tp',
 );
-const addressData3 = RailgunEngine.decodeAddress(
+const addressData3 = DopEngine.decodeAddress(
   '0zk1q8hxknrs97q8pjxaagwthzc0df99rzmhl2xnlxmgv9akv32sua0kfrv7j6fe3z53llhxknrs97q8pjxaagwthzc0df99rzmhl2xnlxmgv9akv32sua0kg0zpzts',
 );
 

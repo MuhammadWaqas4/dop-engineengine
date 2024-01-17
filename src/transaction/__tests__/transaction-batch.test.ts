@@ -18,10 +18,10 @@ import { AddressData } from '../../key-derivation/bech32';
 import { MerkleTree } from '../../merkletree/merkletree';
 import { TransactNote } from '../../note/transact-note';
 import { Prover, Groth16 } from '../../prover/prover';
-import { RailgunWallet } from '../../wallet/railgun-wallet';
+import { DopWallet } from '../../wallet/dop-wallet';
 import { TransactionBatch } from '../transaction-batch';
 import { getTokenDataERC20 } from '../../note/note-util';
-import { RailgunEngine } from '../../railgun-engine';
+import { DopEngine } from '../../dop-engine';
 import { PollingJsonRpcProvider } from '../../provider/polling-json-rpc-provider';
 import { createPollingJsonRpcProviderForListeners } from '../../provider/polling-util';
 import { isDefined } from '../../utils/is-defined';
@@ -31,7 +31,7 @@ const { expect } = chai;
 
 let db: Database;
 let merkletree: MerkleTree;
-let wallet: RailgunWallet;
+let wallet: DopWallet;
 let chain: Chain;
 let ethersWallet: Wallet;
 let transactionBatch: TransactionBatch;
@@ -75,7 +75,7 @@ describe('Transaction/Transaction Batch', function run() {
       id: 1,
     };
     merkletree = await MerkleTree.create(db, chain, async () => true);
-    wallet = await RailgunWallet.fromMnemonic(
+    wallet = await DopWallet.fromMnemonic(
       db,
       testEncryptionKey,
       testMnemonic,
@@ -88,7 +88,7 @@ describe('Transaction/Transaction Batch', function run() {
       return;
     }
 
-    const engine = new RailgunEngine(
+    const engine = new DopEngine(
       'Tx Batch Tests',
       memdown(),
       testArtifactsGetter,

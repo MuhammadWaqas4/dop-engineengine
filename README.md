@@ -4,7 +4,7 @@
 
 Wallet framework for DOP smart contracts and private balances on Ethereum and more.
 
-Read about DOP: www.railgun.org
+Read about DOP: www.dop.org
 
 For simple implementations, use [DOP Wallet SDK](https://github.com/MuhammadWaqas4/dop-wallet-old).
 

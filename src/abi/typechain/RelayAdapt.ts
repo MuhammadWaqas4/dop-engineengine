@@ -224,7 +224,7 @@ export interface RelayAdaptInterface extends Interface {
     nameOrSignature:
       | "getAdaptParams"
       | "multicall"
-      | "railgun"
+      | "dop"
       | "relay"
       | "shield"
       | "transfer"
@@ -243,7 +243,7 @@ export interface RelayAdaptInterface extends Interface {
     functionFragment: "multicall",
     values: [boolean, RelayAdapt.CallStruct[]]
   ): string;
-  encodeFunctionData(functionFragment: "railgun", values?: undefined): string;
+  encodeFunctionData(functionFragment: "dop", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "relay",
     values: [TransactionStruct[], RelayAdapt.ActionDataStruct]
@@ -271,7 +271,7 @@ export interface RelayAdaptInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "multicall", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "railgun", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "dop", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "relay", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "shield", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "transfer", data: BytesLike): Result;
@@ -352,7 +352,7 @@ export interface RelayAdapt extends BaseContract {
     "payable"
   >;
 
-  railgun: TypedContractMethod<[], [string], "view">;
+  dop: TypedContractMethod<[], [string], "view">;
 
   relay: TypedContractMethod<
     [
@@ -407,7 +407,7 @@ export interface RelayAdapt extends BaseContract {
     "payable"
   >;
   getFunction(
-    nameOrSignature: "railgun"
+    nameOrSignature: "dop"
   ): TypedContractMethod<[], [string], "view">;
   getFunction(
     nameOrSignature: "relay"

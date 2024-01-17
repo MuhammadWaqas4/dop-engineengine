@@ -1,14 +1,14 @@
 import type { AbstractLevelDOWN } from 'abstract-leveldown';
 import EventEmitter from 'events';
 import { FallbackProvider } from 'ethers';
-import { DopSmartWalletContract } from './contracts/railgun-smart-wallet/railgun-smart-wallet';
+import { DopSmartWalletContract } from './contracts/dop-smart-wallet/dop-smart-wallet';
 import { RelayAdaptContract } from './contracts/relay-adapt/relay-adapt';
 import { Database, DatabaseNamespace } from './database/database';
 import { MerkleTree } from './merkletree/merkletree';
 import { Prover } from './prover/prover';
 import { encodeAddress, decodeAddress } from './key-derivation/bech32';
 import { ByteLength, formatToByteLength, hexlify } from './utils/bytes';
-import { DopWallet } from './wallet/railgun-wallet';
+import { DopWallet } from './wallet/dop-wallet';
 import EngineDebug from './debugger/debugger';
 import { Chain, EngineDebugger } from './models/engine-types';
 import {
@@ -55,7 +55,7 @@ class DopEngine extends EventEmitter {
   private readonly skipMerkletreeScans: boolean;
 
   /**
-   * Create a RAILGUN Engine instance.
+   * Create a DOP Engine instance.
    * @param walletSource - string representing your wallet's name (16 char max, lowercase and numerals only)
    * @param leveldown - abstract-leveldown compatible store
    * @param artifactGetter - async function to retrieve artifacts, engine doesn't handle caching
@@ -167,9 +167,9 @@ class DopEngine extends EventEmitter {
 
   async getMostRecentValidCommitmentBlock(chain: Chain): Promise<Optional<number>> {
     const merkletree = this.getMerkletreeForChain(chain);
-    const railgunSmartWalletContract =
-      ContractStore.railgunSmartWalletContracts[chain.type]?.[chain.id];
-    const provider = railgunSmartWalletContract.contract.runner?.provider;
+    const dopSmartWalletContract =
+      ContractStore.dopSmartWalletContracts[chain.type]?.[chain.id];
+    const provider = dopSmartWalletContract.contract.runner?.provider;
     if (!provider) {
       throw new Error('Requires provider for commitment block lookup');
     }
@@ -310,7 +310,7 @@ class DopEngine extends EventEmitter {
    */
   async scanHistory(chain: Chain) {
     if (this.skipMerkletreeScans) {
-      EngineDebug.log(`Skipping merkletree scan: skipMerkletreeScans set on RAILGUN Engine.`);
+      EngineDebug.log(`Skipping merkletree scan: skipMerkletreeScans set on DOP Engine.`);
       return;
     }
     if (!isDefined(this.merkletrees[chain.type]?.[chain.id])) {
@@ -319,7 +319,7 @@ class DopEngine extends EventEmitter {
       );
       return;
     }
-    if (!isDefined(ContractStore.railgunSmartWalletContracts[chain.type]?.[chain.id])) {
+    if (!isDefined(ContractStore.dopSmartWalletContracts[chain.type]?.[chain.id])) {
       EngineDebug.log(
         `Cannot scan history. Proxy contract not yet loaded for chain ${chain.type}:${chain.id}.`,
       );
@@ -336,8 +336,8 @@ class DopEngine extends EventEmitter {
     }
 
     const merkletree = this.getMerkletreeForChain(chain);
-    const railgunSmartWalletContract =
-      ContractStore.railgunSmartWalletContracts[chain.type]?.[chain.id];
+    const dopSmartWalletContract =
+      ContractStore.dopSmartWalletContracts[chain.type]?.[chain.id];
     if (merkletree.isScanning) {
       // Do not allow multiple simultaneous scans.
       EngineDebug.log('Already scanning. Stopping additional re-scan.');
@@ -358,16 +358,16 @@ class DopEngine extends EventEmitter {
       `startScanningBlockSlowScan: ${startScanningBlockSlowScan} (note: continously updated during scan)`,
     );
 
-    if (!railgunSmartWalletContract.contract.runner?.provider) {
+    if (!dopSmartWalletContract.contract.runner?.provider) {
       throw new Error('Requires provider for DopSmartWallet contract');
     }
-    const latestBlock = await railgunSmartWalletContract.contract.runner.provider.getBlockNumber();
+    const latestBlock = await dopSmartWalletContract.contract.runner.provider.getBlockNumber();
     const totalBlocksToScan = latestBlock - startScanningBlockSlowScan;
     EngineDebug.log(`Total blocks to SlowScan: ${totalBlocksToScan}`);
 
     try {
       // Run slow scan
-      await railgunSmartWalletContract.getHistoricalEvents(
+      await dopSmartWalletContract.getHistoricalEvents(
         chain,
         startScanningBlockSlowScan,
         latestBlock,
@@ -474,14 +474,14 @@ class DopEngine extends EventEmitter {
 
   /**
    * Load network
-   * @param railgunSmartWalletContractAddress - address of railgun instance (proxy contract)
-   * @param relayAdaptContractAddress - address of railgun instance (proxy contract)
+   * @param dopSmartWalletContractAddress - address of dop instance (proxy contract)
+   * @param relayAdaptContractAddress - address of dop instance (proxy contract)
    * @param provider - ethers provider for network
    * @param deploymentBlock - block number to start scanning from
    */
   async loadNetwork(
     chain: Chain,
-    railgunSmartWalletContractAddress: string,
+    dopSmartWalletContractAddress: string,
     relayAdaptContractAddress: string,
     defaultProvider: PollingJsonRpcProvider | FallbackProvider,
     pollingProvider: PollingJsonRpcProvider,
@@ -506,7 +506,7 @@ class DopEngine extends EventEmitter {
 
     const hasMerkletree = isDefined(this.merkletrees[chain.type]?.[chain.id]);
     const hasSmartWalletContract = isDefined(
-      ContractStore.railgunSmartWalletContracts[chain.type]?.[chain.id],
+      ContractStore.dopSmartWalletContracts[chain.type]?.[chain.id],
     );
     const hasRelayAdaptContract = isDefined(
       ContractStore.relayAdaptContracts[chain.type]?.[chain.id],
@@ -517,10 +517,10 @@ class DopEngine extends EventEmitter {
     }
 
     // Create proxy contract instance
-    ContractStore.railgunSmartWalletContracts[chain.type] ??= [];
-    ContractStore.railgunSmartWalletContracts[chain.type][chain.id] =
+    ContractStore.dopSmartWalletContracts[chain.type] ??= [];
+    ContractStore.dopSmartWalletContracts[chain.type][chain.id] =
       new DopSmartWalletContract(
-        railgunSmartWalletContractAddress,
+        dopSmartWalletContractAddress,
         defaultProvider,
         pollingProvider,
         chain,
@@ -536,7 +536,7 @@ class DopEngine extends EventEmitter {
     // Create tree controllers
     this.merkletrees[chain.type] ??= [];
     this.merkletrees[chain.type][chain.id] = await MerkleTree.create(this.db, chain, (tree, root) =>
-      ContractStore.railgunSmartWalletContracts[chain.type]?.[chain.id].validateRoot(tree, root),
+      ContractStore.dopSmartWalletContracts[chain.type]?.[chain.id].validateRoot(tree, root),
     );
 
     this.deploymentBlocks[chain.type] ??= [];
@@ -570,7 +570,7 @@ class DopEngine extends EventEmitter {
     const unshieldListener = async (unshields: UnshieldStoredEvent[]) => {
       await this.unshieldListener(chain, unshields);
     };
-    await ContractStore.railgunSmartWalletContracts[chain.type]?.[chain.id].setTreeUpdateListeners(
+    await ContractStore.dopSmartWalletContracts[chain.type]?.[chain.id].setTreeUpdateListeners(
       eventsListener,
       nullifierListener,
       unshieldListener,
@@ -582,7 +582,7 @@ class DopEngine extends EventEmitter {
    * @param chain - chainID of network to unload
    */
   async unloadNetwork(chain: Chain): Promise<void> {
-    if (!isDefined(ContractStore.railgunSmartWalletContracts[chain.type]?.[chain.id])) {
+    if (!isDefined(ContractStore.dopSmartWalletContracts[chain.type]?.[chain.id])) {
       return;
     }
 
@@ -597,10 +597,10 @@ class DopEngine extends EventEmitter {
     });
 
     // Unload listeners
-    await ContractStore.railgunSmartWalletContracts[chain.type]?.[chain.id].unload();
+    await ContractStore.dopSmartWalletContracts[chain.type]?.[chain.id].unload();
 
     // Delete contracts
-    delete ContractStore.railgunSmartWalletContracts[chain.id]?.[chain.type];
+    delete ContractStore.dopSmartWalletContracts[chain.id]?.[chain.type];
     delete ContractStore.relayAdaptContracts[chain.id]?.[chain.type];
 
     // Delete merkletree
@@ -725,9 +725,9 @@ class DopEngine extends EventEmitter {
   async unload() {
     // Unload chains
     await Promise.all(
-      ContractStore.railgunSmartWalletContracts.map(async (contractsForChainType, chainType) => {
+      ContractStore.dopSmartWalletContracts.map(async (contractsForChainType, chainType) => {
         await Promise.all(
-          contractsForChainType.map(async (_railgunSmartWalletContract, chainID) => {
+          contractsForChainType.map(async (_dopSmartWalletContract, chainID) => {
             EngineDebug.log(`unload network ${chainType}:${chainID}`);
             await this.unloadNetwork({ type: chainType, id: chainID });
           }),
@@ -891,7 +891,7 @@ class DopEngine extends EventEmitter {
 
   static decodeAddress = decodeAddress;
 
-  railgunSmartWalletContracts = ContractStore.railgunSmartWalletContracts;
+  dopSmartWalletContracts = ContractStore.dopSmartWalletContracts;
 
   relayAdaptContracts = ContractStore.relayAdaptContracts;
 }

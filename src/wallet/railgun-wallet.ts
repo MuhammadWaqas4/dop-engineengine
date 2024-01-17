@@ -10,7 +10,7 @@ import { mnemonicToSeed } from '../key-derivation/bip39';
 import { PublicInputs } from '../models';
 import { signEDDSA } from '../utils/keys-utils';
 
-class RailgunWallet extends AbstractWallet {
+class DopWallet extends AbstractWallet {
   /**
    * Load encrypted spending key Node from database
    * Spending key should be kept private and only accessed on demand
@@ -34,7 +34,7 @@ class RailgunWallet extends AbstractWallet {
    * @returns {Node} BabyJubJub node
    */
   private async loadSpendingKey(encryptionKey: string): Promise<WalletNode> {
-    const { mnemonic, index } = (await RailgunWallet.read(
+    const { mnemonic, index } = (await DopWallet.read(
       this.db,
       this.id,
       encryptionKey,
@@ -75,7 +75,7 @@ class RailgunWallet extends AbstractWallet {
 
     const viewingKeyPair = await nodes.viewing.getViewingKeyPair();
     const spendingPublicKey = nodes.spending.getSpendingKeyPair().pubkey;
-    return new RailgunWallet(id, db, viewingKeyPair, spendingPublicKey, creationBlockNumbers);
+    return new DopWallet(id, db, viewingKeyPair, spendingPublicKey, creationBlockNumbers);
   }
 
   /**
@@ -84,7 +84,7 @@ class RailgunWallet extends AbstractWallet {
    * @param {BytesData} encryptionKey - encryption key to use with database
    * @param {string} mnemonic - mnemonic to load wallet from
    * @param {number} index - index of derivation path to derive if not 0
-   * @returns {RailgunWallet} Wallet
+   * @returns {DopWallet} Wallet
    */
   static async fromMnemonic(
     db: Database,
@@ -92,8 +92,8 @@ class RailgunWallet extends AbstractWallet {
     mnemonic: string,
     index: number,
     creationBlockNumbers: Optional<number[][]>,
-  ): Promise<RailgunWallet> {
-    const id = RailgunWallet.generateID(mnemonic, index);
+  ): Promise<DopWallet> {
+    const id = DopWallet.generateID(mnemonic, index);
 
     // Write encrypted mnemonic to DB
     await AbstractWallet.write(db, id, encryptionKey, { mnemonic, index, creationBlockNumbers });
@@ -106,13 +106,13 @@ class RailgunWallet extends AbstractWallet {
    * @param {Database} db - database
    * @param {BytesData} encryptionKey - encryption key to use with database
    * @param {string} id - wallet id
-   * @returns {RailgunWallet} Wallet
+   * @returns {DopWallet} Wallet
    */
   static async loadExisting(
     db: Database,
     encryptionKey: string,
     id: string,
-  ): Promise<RailgunWallet> {
+  ): Promise<DopWallet> {
     // Get encrypted mnemonic and index from DB
     const { mnemonic, index, creationBlockNumbers } = (await AbstractWallet.read(
       db,
@@ -127,4 +127,4 @@ class RailgunWallet extends AbstractWallet {
   }
 }
 
-export { RailgunWallet };
+export { DopWallet };

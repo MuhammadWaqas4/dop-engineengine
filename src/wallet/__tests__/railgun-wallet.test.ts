@@ -3,7 +3,7 @@ import chaiAsPromised from 'chai-as-promised';
 import { utf8ToBytes } from 'ethereum-cryptography/utils';
 import memdown from 'memdown';
 import { verifyED25519 } from '../../utils/keys-utils';
-import { RailgunWallet } from '../railgun-wallet';
+import { DopWallet } from '../dop-wallet';
 import { ViewOnlyWallet } from '../view-only-wallet';
 import { config } from '../../test/config.test';
 import { Chain, ChainType } from '../../models/engine-types';
@@ -11,7 +11,7 @@ import { Database } from '../../database/database';
 import { MerkleTree } from '../../merkletree/merkletree';
 import { sha256 } from '../../utils/hash';
 import { combine } from '../../utils/bytes';
-import { RailgunEngine } from '../../railgun-engine';
+import { DopEngine } from '../../dop-engine';
 import { mnemonicToSeed } from '../../key-derivation/bip39';
 
 chai.use(chaiAsPromised);
@@ -19,7 +19,7 @@ const { expect } = chai;
 
 let db: Database;
 let merkletree: MerkleTree;
-let wallet: RailgunWallet;
+let wallet: DopWallet;
 let viewOnlyWallet: ViewOnlyWallet;
 const chain: Chain = {
   type: ChainType.EVM,
@@ -34,7 +34,7 @@ describe('Wallet', () => {
     // Create database and wallet
     db = new Database(memdown());
     merkletree = await MerkleTree.create(db, chain, async () => true);
-    wallet = await RailgunWallet.fromMnemonic(
+    wallet = await DopWallet.fromMnemonic(
       db,
       testEncryptionKey,
       testMnemonic,
@@ -51,7 +51,7 @@ describe('Wallet', () => {
   });
 
   it('Should load existing wallet', async () => {
-    const wallet2 = await RailgunWallet.loadExisting(db, testEncryptionKey, wallet.id);
+    const wallet2 = await DopWallet.loadExisting(db, testEncryptionKey, wallet.id);
     expect(wallet2.id).to.equal(wallet.id);
   });
 
@@ -174,7 +174,7 @@ describe('Wallet', () => {
 
   it('Should derive addresses correctly', async () => {
     const address = wallet.getAddress(chain);
-    const decoded = RailgunEngine.decodeAddress(address);
+    const decoded = DopEngine.decodeAddress(address);
     expect(decoded.masterPublicKey).to.equal(wallet.masterPublicKey);
     expect(decoded.chain).to.deep.equal(chain);
   });

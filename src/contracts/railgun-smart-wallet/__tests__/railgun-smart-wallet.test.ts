@@ -7,7 +7,7 @@ import { groth16 } from 'snarkjs';
 import { abi as erc20Abi } from '../../../test/test-erc20-abi.test';
 import { abi as erc721Abi } from '../../../test/test-erc721-abi.test';
 import { config } from '../../../test/config.test';
-import { RailgunWallet } from '../../../wallet/railgun-wallet';
+import { DopWallet } from '../../../wallet/dop-wallet';
 import {
   ByteLength,
   formatToByteLength,
@@ -17,8 +17,8 @@ import {
 } from '../../../utils/bytes';
 import {
   awaitMultipleScans,
-  awaitRailgunSmartWalletEvent,
-  awaitRailgunSmartWalletShield,
+  awaitDopSmartWalletEvent,
+  awaitDopSmartWalletShield,
   awaitScan,
   DECIMALS_18,
   getEthersWallet,
@@ -44,8 +44,8 @@ import { ViewOnlyWallet } from '../../../wallet/view-only-wallet';
 import { Groth16 } from '../../../prover/prover';
 import { promiseTimeout } from '../../../utils/promises';
 import { Chain, ChainType } from '../../../models/engine-types';
-import { RailgunEngine } from '../../../railgun-engine';
-import { RailgunSmartWalletContract } from '../railgun-smart-wallet';
+import { DopEngine } from '../../../dop-engine';
+import { DopSmartWalletContract } from '../dop-smart-wallet';
 import { MEMO_SENDER_RANDOM_NULL } from '../../../models/transaction-constants';
 import { TransactNote } from '../../../note/transact-note';
 import { ShieldNoteERC20 } from '../../../note/erc20/shield-note-erc20';
@@ -61,7 +61,7 @@ import { mintNFTsID01ForTest, shieldNFTForTest } from '../../../test/shared-test
 import { TestERC20 } from '../../../test/abi/typechain/TestERC20';
 import { TestERC721 } from '../../../test/abi/typechain/TestERC721';
 import { TransactionHistoryReceiveTokenAmount } from '../../../models/wallet-types';
-import { ShieldRequestStruct } from '../../../abi/typechain/RailgunSmartWallet';
+import { ShieldRequestStruct } from '../../../abi/typechain/DopSmartWallet';
 import { PollingJsonRpcProvider } from '../../../provider/polling-json-rpc-provider';
 import { createPollingJsonRpcProviderForListeners } from '../../../provider/polling-util';
 import { isDefined } from '../../../utils/is-defined';
@@ -71,14 +71,14 @@ const { expect } = chai;
 
 let provider: PollingJsonRpcProvider;
 let chain: Chain;
-let engine: RailgunEngine;
+let engine: DopEngine;
 let ethersWallet: Wallet;
 let snapshot: number;
 let token: TestERC20;
 let nft: TestERC721;
-let railgunSmartWalletContract: RailgunSmartWalletContract;
-let wallet: RailgunWallet;
-let wallet2: RailgunWallet;
+let dopSmartWalletContract: DopSmartWalletContract;
+let wallet: DopWallet;
+let wallet2: DopWallet;
 let viewOnlyWallet: ViewOnlyWallet;
 
 const testMnemonic = config.mnemonic;
@@ -91,11 +91,11 @@ const VALUE = BigInt(10000) * DECIMALS_18;
 
 let testShield: (value?: bigint) => Promise<TransactionReceipt | null>;
 
-describe('Railgun Smart Wallet', function runTests() {
+describe('Dop Smart Wallet', function runTests() {
   this.timeout(20000);
 
   beforeEach(async () => {
-    engine = new RailgunEngine(
+    engine = new DopEngine(
       'Test RSW',
       memdown(),
       testArtifactsGetter,
@@ -125,14 +125,14 @@ describe('Railgun Smart Wallet', function runTests() {
       0,
     );
     await engine.scanHistory(chain);
-    railgunSmartWalletContract = ContractStore.railgunSmartWalletContracts[chain.type][chain.id];
+    dopSmartWalletContract = ContractStore.dopSmartWalletContracts[chain.type][chain.id];
 
     ethersWallet = getEthersWallet(config.mnemonic, provider);
     snapshot = (await provider.send('evm_snapshot', [])) as number;
 
     token = new Contract(TOKEN_ADDRESS, erc20Abi, ethersWallet) as unknown as TestERC20;
     const balance = await token.balanceOf(ethersWallet.address);
-    await token.approve(railgunSmartWalletContract.address, balance);
+    await token.approve(dopSmartWalletContract.address, balance);
 
     nft = new Contract(NFT_ADDRESS, erc721Abi, ethersWallet) as unknown as TestERC721;
 
@@ -157,7 +157,7 @@ describe('Railgun Smart Wallet', function runTests() {
         wallet.getViewingKeyPair().pubkey,
       );
 
-      const shieldTx = await railgunSmartWalletContract.generateShield([shieldInput]);
+      const shieldTx = await dopSmartWalletContract.generateShield([shieldInput]);
 
       // Send shield on chain
       const tx = await sendTransactionWithLatestNonce(ethersWallet, shieldTx);
@@ -169,7 +169,7 @@ describe('Railgun Smart Wallet', function runTests() {
     const nonPollingProvider = new JsonRpcProvider(config.rpc);
     expect(() => {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
-      return new RailgunSmartWalletContract('abc', nonPollingProvider as any, nonPollingProvider as any, chain);
+      return new DopSmartWalletContract('abc', nonPollingProvider as any, nonPollingProvider as any, chain);
     }).to.throw(
       'The JsonRpcProvider must have polling enabled. Use PollingJsonRpcProvider to instantiate.',
     );
@@ -181,7 +181,7 @@ describe('Railgun Smart Wallet', function runTests() {
       return;
     }
 
-    expect(await railgunSmartWalletContract.merkleRoot()).to.equal(
+    expect(await dopSmartWalletContract.merkleRoot()).to.equal(
       '14fceeac99eb8419a2796d1958fc2050d489bf5a3eb170ef16a667060344ba90',
     );
   });
@@ -200,14 +200,14 @@ describe('Railgun Smart Wallet', function runTests() {
     await mintNFTsID01ForTest(nft, ethersWallet);
 
     // Approve NFT for shield.
-    const approval = await nft.approve.populateTransaction(railgunSmartWalletContract.address, 1);
+    const approval = await nft.approve.populateTransaction(dopSmartWalletContract.address, 1);
     const approvalTxResponse = await sendTransactionWithLatestNonce(ethersWallet, approval);
     await approvalTxResponse.wait();
 
     const shield = await shieldNFTForTest(
       wallet,
       ethersWallet,
-      railgunSmartWalletContract,
+      dopSmartWalletContract,
       chain,
       RANDOM,
       NFT_ADDRESS,
@@ -255,7 +255,7 @@ describe('Railgun Smart Wallet', function runTests() {
       testEncryptionKey,
       () => {},
     );
-    const tx_initial = await railgunSmartWalletContract.transact(txs_initial);
+    const tx_initial = await dopSmartWalletContract.transact(txs_initial);
     const txTransact = await sendTransactionWithLatestNonce(ethersWallet, tx_initial);
     await Promise.all([
       txTransact.wait(),
@@ -287,7 +287,7 @@ describe('Railgun Smart Wallet', function runTests() {
         c: { x: 0n, y: 0n },
       },
     ]);
-    const tx_DummyNullRelayerFee = await railgunSmartWalletContract.transact(
+    const tx_DummyNullRelayerFee = await dopSmartWalletContract.transact(
       txs_DummyNullRelayerFee,
     );
     tx_DummyNullRelayerFee.from = '0x000000000000000000000000000000000000dEaD';
@@ -323,7 +323,7 @@ describe('Railgun Smart Wallet', function runTests() {
         c: { x: 0n, y: 0n },
       },
     ]);
-    const tx_DummyActualRelayerFee = await railgunSmartWalletContract.transact(
+    const tx_DummyActualRelayerFee = await dopSmartWalletContract.transact(
       txs_DummyActualRelayerFee,
     );
     tx_DummyActualRelayerFee.from = '0x000000000000000000000000000000000000dEaD';
@@ -358,7 +358,7 @@ describe('Railgun Smart Wallet', function runTests() {
         c: { x: 0n, y: 0n },
       },
     ]);
-    const tx_ActualTransaction = await railgunSmartWalletContract.transact(txs_ActualTransaction);
+    const tx_ActualTransaction = await dopSmartWalletContract.transact(txs_ActualTransaction);
     tx_ActualTransaction.from = ethersWallet.address;
     const gasEstimate_ActualTransaction = await provider.estimateGas(tx_ActualTransaction);
     // This should be around 1.42M gas.
@@ -388,13 +388,13 @@ describe('Railgun Smart Wallet', function runTests() {
       return;
     }
     expect(
-      await railgunSmartWalletContract.validateRoot(
+      await dopSmartWalletContract.validateRoot(
         0,
         '0x14fceeac99eb8419a2796d1958fc2050d489bf5a3eb170ef16a667060344ba90',
       ),
     ).to.equal(true);
     expect(
-      await railgunSmartWalletContract.validateRoot(
+      await dopSmartWalletContract.validateRoot(
         0,
         '0x09981e69d3ecf345fb3e2e48243889aa4ff906423d6a686005cac572a3a9632d',
       ),
@@ -406,7 +406,7 @@ describe('Railgun Smart Wallet', function runTests() {
       this.skip();
       return;
     }
-    const fees = await railgunSmartWalletContract.fees();
+    const fees = await dopSmartWalletContract.fees();
     expect(fees).to.be.an('object');
     expect(fees.shield).to.be.a('bigint');
     expect(fees.unshield).to.be.a('bigint');
@@ -435,7 +435,7 @@ describe('Railgun Smart Wallet', function runTests() {
     let startingBlock = await provider.getBlockNumber();
 
     // Add a secondary listener.
-    await railgunSmartWalletContract.setTreeUpdateListeners(
+    await dopSmartWalletContract.setTreeUpdateListeners(
       eventsListener,
       nullifiersListener,
       unshieldListener,
@@ -446,7 +446,7 @@ describe('Railgun Smart Wallet', function runTests() {
     const nullifiersListener2 = (nullifiers: Nullifier[]) => {
       resultNullifiers2.push(...nullifiers);
     };
-    railgunSmartWalletContract.on(EngineEvent.ContractNullifierReceived, nullifiersListener2);
+    dopSmartWalletContract.on(EngineEvent.ContractNullifierReceived, nullifiersListener2);
 
     const txResponse = await testShield();
     if (txResponse == null) {
@@ -465,7 +465,7 @@ describe('Railgun Smart Wallet', function runTests() {
 
     let latestBlock = await provider.getBlockNumber();
 
-    await railgunSmartWalletContract.getHistoricalEvents(
+    await dopSmartWalletContract.getHistoricalEvents(
       chain,
       startingBlock,
       latestBlock,
@@ -513,7 +513,7 @@ describe('Railgun Smart Wallet', function runTests() {
       testEncryptionKey,
       () => {},
     );
-    const transact = await railgunSmartWalletContract.transact(serializedTxs);
+    const transact = await dopSmartWalletContract.transact(serializedTxs);
 
     // Send transact on chain
     const txTransact = await sendTransactionWithLatestNonce(ethersWallet, transact);
@@ -543,7 +543,7 @@ describe('Railgun Smart Wallet', function runTests() {
 
     latestBlock = await provider.getBlockNumber();
 
-    await railgunSmartWalletContract.getHistoricalEvents(
+    await dopSmartWalletContract.getHistoricalEvents(
       chain,
       startingBlock,
       latestBlock,
@@ -580,7 +580,7 @@ describe('Railgun Smart Wallet', function runTests() {
         await shield.serialize(shieldPrivateKey, wallet.getViewingKeyPair().pubkey),
       );
     }
-    const shieldTx = await railgunSmartWalletContract.generateShield(shieldInputs);
+    const shieldTx = await dopSmartWalletContract.generateShield(shieldInputs);
 
     // Send shield on chain
     const tx = await sendTransactionWithLatestNonce(ethersWallet, shieldTx);
@@ -601,7 +601,7 @@ describe('Railgun Smart Wallet', function runTests() {
       testEncryptionKey,
       () => {},
     );
-    const transact = await railgunSmartWalletContract.transact(serializedTxs);
+    const transact = await dopSmartWalletContract.transact(serializedTxs);
 
     // Send transact on chain
     const txTransact = await sendTransactionWithLatestNonce(ethersWallet, transact);
@@ -709,7 +709,7 @@ describe('Railgun Smart Wallet', function runTests() {
       return;
     }
     const unshield = new UnshieldNoteERC20(ethersWallet.address, 100n, await token.getAddress());
-    const contractHash = await railgunSmartWalletContract.hashCommitment(unshield.preImage);
+    const contractHash = await dopSmartWalletContract.hashCommitment(unshield.preImage);
 
     expect(hexlify(contractHash)).to.equal(unshield.hashHex);
   });
@@ -721,25 +721,25 @@ describe('Railgun Smart Wallet', function runTests() {
     }
 
     let result!: CommitmentEvent;
-    await railgunSmartWalletContract.setTreeUpdateListeners(
+    await dopSmartWalletContract.setTreeUpdateListeners(
       async (commitmentEvent: CommitmentEvent) => {
         result = commitmentEvent;
       },
       async () => {},
       async () => {},
     );
-    const merkleRootBefore = await railgunSmartWalletContract.merkleRoot();
+    const merkleRootBefore = await dopSmartWalletContract.merkleRoot();
 
     // Create shield
     const shield = new ShieldNoteERC20(wallet.masterPublicKey, RANDOM, VALUE, TOKEN_ADDRESS);
     const shieldPrivateKey = hexToBytes(randomHex(32));
     const shieldInput = await shield.serialize(shieldPrivateKey, wallet.getViewingKeyPair().pubkey);
 
-    const shieldTx = await railgunSmartWalletContract.generateShield([shieldInput]);
+    const shieldTx = await dopSmartWalletContract.generateShield([shieldInput]);
 
     const txResponse = await sendTransactionWithLatestNonce(ethersWallet, shieldTx);
     await Promise.all([
-      awaitRailgunSmartWalletShield(railgunSmartWalletContract),
+      awaitDopSmartWalletShield(dopSmartWalletContract),
       promiseTimeout(awaitScan(wallet, chain), 5000),
       txResponse.wait(),
     ]);
@@ -749,7 +749,7 @@ describe('Railgun Smart Wallet', function runTests() {
     expect(result.startPosition).to.equal(0);
     expect(result.commitments.length).to.equal(1);
 
-    const merkleRootAfterShield = await railgunSmartWalletContract.merkleRoot();
+    const merkleRootAfterShield = await dopSmartWalletContract.merkleRoot();
 
     // Check merkle root changed
     expect(merkleRootAfterShield).not.to.equal(merkleRootBefore);
@@ -762,20 +762,20 @@ describe('Railgun Smart Wallet', function runTests() {
     }
 
     let result!: CommitmentEvent;
-    await railgunSmartWalletContract.setTreeUpdateListeners(
+    await dopSmartWalletContract.setTreeUpdateListeners(
       async (commitmentEvent: CommitmentEvent) => {
         result = commitmentEvent;
       },
       async () => {},
       async () => {},
     );
-    const merkleRootBefore = await railgunSmartWalletContract.merkleRoot();
+    const merkleRootBefore = await dopSmartWalletContract.merkleRoot();
 
     // Mint NFTs with tokenIDs 0 and 1 into public balance.
     await mintNFTsID01ForTest(nft, ethersWallet);
 
     // Approve NFT for shield.
-    const approval = await nft.approve.populateTransaction(railgunSmartWalletContract.address, 1);
+    const approval = await nft.approve.populateTransaction(dopSmartWalletContract.address, 1);
     const approvalTxResponse = await sendTransactionWithLatestNonce(ethersWallet, approval);
     await approvalTxResponse.wait();
 
@@ -783,7 +783,7 @@ describe('Railgun Smart Wallet', function runTests() {
     const shield = await shieldNFTForTest(
       wallet,
       ethersWallet,
-      railgunSmartWalletContract,
+      dopSmartWalletContract,
       chain,
       RANDOM,
       NFT_ADDRESS,
@@ -809,7 +809,7 @@ describe('Railgun Smart Wallet', function runTests() {
     expect(result.startPosition).to.equal(0);
     expect(result.commitments.length).to.equal(1);
 
-    const merkleRootAfterShield = await railgunSmartWalletContract.merkleRoot();
+    const merkleRootAfterShield = await dopSmartWalletContract.merkleRoot();
 
     // Check merkle root changed
     expect(merkleRootAfterShield).not.to.equal(merkleRootBefore);
@@ -822,10 +822,10 @@ describe('Railgun Smart Wallet', function runTests() {
     }
 
     await testShield(1000n);
-    const merkleRootAfterShield = await railgunSmartWalletContract.merkleRoot();
+    const merkleRootAfterShield = await dopSmartWalletContract.merkleRoot();
 
     let result!: CommitmentEvent;
-    await railgunSmartWalletContract.setTreeUpdateListeners(
+    await dopSmartWalletContract.setTreeUpdateListeners(
       async (commitmentEvent: CommitmentEvent) => {
         result = commitmentEvent;
       },
@@ -857,7 +857,7 @@ describe('Railgun Smart Wallet', function runTests() {
     });
 
     // Create transact
-    const transact = await railgunSmartWalletContract.transact(
+    const transact = await dopSmartWalletContract.transact(
       await transactionBatch.generateTransactions(
         engine.prover,
         wallet,
@@ -871,14 +871,14 @@ describe('Railgun Smart Wallet', function runTests() {
 
     await Promise.all([
       txResponse.wait(),
-      awaitRailgunSmartWalletEvent(
-        railgunSmartWalletContract,
-        railgunSmartWalletContract.contract.filters.Transact(),
+      awaitDopSmartWalletEvent(
+        dopSmartWalletContract,
+        dopSmartWalletContract.contract.filters.Transact(),
       ),
     ]);
 
     // Check merkle root changed
-    const merkleRootAfterTransact = await railgunSmartWalletContract.merkleRoot();
+    const merkleRootAfterTransact = await dopSmartWalletContract.merkleRoot();
     expect(merkleRootAfterTransact).to.not.equal(merkleRootAfterShield);
 
     // Check result

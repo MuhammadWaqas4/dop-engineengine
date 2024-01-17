@@ -15,7 +15,7 @@ import { Chain } from '../models/engine-types';
 import { ArtifactGetter, PublicInputs } from '../models/prover-types';
 import { mnemonicToPrivateKey } from '../key-derivation';
 import { TypedContractEvent, TypedDeferredTopicFilter } from '../abi/typechain/common';
-import { RailgunSmartWalletContract } from '../contracts/railgun-smart-wallet/railgun-smart-wallet';
+import { DopSmartWalletContract } from '../contracts/dop-smart-wallet/dop-smart-wallet';
 import { promiseTimeout } from '../utils';
 
 export const DECIMALS_18 = BigInt(10) ** BigInt(18);
@@ -47,7 +47,7 @@ const assertTestNodeArtifactExists = (nullifiers: number, commitments: number): 
   });
   if (!found) {
     throw new Error(
-      `No artifacts for inputs: ${nullifiers}-${commitments}. NOTE: railgun-community-circuit-artifacts-lite only includes a small subset of artifacts for testing.`,
+      `No artifacts for inputs: ${nullifiers}-${commitments}. NOTE: dop-community-circuit-artifacts-lite only includes a small subset of artifacts for testing.`,
     );
   }
 };
@@ -94,53 +94,53 @@ export const awaitMultipleScans = async (
   return Promise.resolve();
 };
 
-export const awaitRailgunSmartWalletEvent = async (
-  railgunSmartWallet: RailgunSmartWalletContract,
+export const awaitDopSmartWalletEvent = async (
+  dopSmartWallet: DopSmartWalletContract,
   event: TypedDeferredTopicFilter<TypedContractEvent>,
 ) => {
   await promiseTimeout(
     new Promise<void>((resolve) => {
       // eslint-disable-next-line @typescript-eslint/no-floating-promises
-      railgunSmartWallet.contractForListeners.once(event, () => resolve());
+      dopSmartWallet.contractForListeners.once(event, () => resolve());
     }),
     15000,
-    `Timed out waiting for RailgunSmartWallet event: ${event.fragment.name}`,
+    `Timed out waiting for DopSmartWallet event: ${event.fragment.name}`,
   );
 };
 
-export const awaitRailgunSmartWalletShield = async (
-  railgunSmartWallet: RailgunSmartWalletContract,
+export const awaitDopSmartWalletShield = async (
+  dopSmartWallet: DopSmartWalletContract,
 ) => {
-  return awaitRailgunSmartWalletEvent(
-    railgunSmartWallet,
-    railgunSmartWallet.contract.filters.Shield(),
+  return awaitDopSmartWalletEvent(
+    dopSmartWallet,
+    dopSmartWallet.contract.filters.Shield(),
   );
 };
 
-export const awaitRailgunSmartWalletTransact = async (
-  railgunSmartWallet: RailgunSmartWalletContract,
+export const awaitDopSmartWalletTransact = async (
+  dopSmartWallet: DopSmartWalletContract,
 ) => {
-  return awaitRailgunSmartWalletEvent(
-    railgunSmartWallet,
-    railgunSmartWallet.contract.filters.Transact(),
+  return awaitDopSmartWalletEvent(
+    dopSmartWallet,
+    dopSmartWallet.contract.filters.Transact(),
   );
 };
 
-export const awaitRailgunSmartWalletUnshield = async (
-  railgunSmartWallet: RailgunSmartWalletContract,
+export const awaitDopSmartWalletUnshield = async (
+  dopSmartWallet: DopSmartWalletContract,
 ) => {
-  return awaitRailgunSmartWalletEvent(
-    railgunSmartWallet,
-    railgunSmartWallet.contract.filters.Unshield(),
+  return awaitDopSmartWalletEvent(
+    dopSmartWallet,
+    dopSmartWallet.contract.filters.Unshield(),
   );
 };
 
-export const awaitRailgunSmartWalletNullified = async (
-  railgunSmartWallet: RailgunSmartWalletContract,
+export const awaitDopSmartWalletNullified = async (
+  dopSmartWallet: DopSmartWalletContract,
 ) => {
-  return awaitRailgunSmartWalletEvent(
-    railgunSmartWallet,
-    railgunSmartWallet.contract.filters.Nullified(),
+  return awaitDopSmartWalletEvent(
+    dopSmartWallet,
+    dopSmartWallet.contract.filters.Nullified(),
   );
 };
 

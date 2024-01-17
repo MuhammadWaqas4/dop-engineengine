@@ -26,7 +26,7 @@ import { AddressData } from '../../key-derivation/bech32';
 import { MerkleTree } from '../../merkletree/merkletree';
 import { TransactNote } from '../../note/transact-note';
 import { Prover, Groth16 } from '../../prover/prover';
-import { RailgunWallet } from '../../wallet/railgun-wallet';
+import { DopWallet } from '../../wallet/dop-wallet';
 import { config } from '../../test/config.test';
 import { hashBoundParams } from '../bound-params';
 import { MEMO_SENDER_RANDOM_NULL } from '../../models';
@@ -36,8 +36,8 @@ import { TransactionBatch } from '../transaction-batch';
 import { getTokenDataERC20 } from '../../note/note-util';
 import { TokenDataGetter } from '../../token/token-data-getter';
 import { ContractStore } from '../../contracts/contract-store';
-import { RailgunSmartWalletContract } from '../../contracts/railgun-smart-wallet/railgun-smart-wallet';
-import { BoundParamsStruct } from '../../abi/typechain/RailgunSmartWallet';
+import { DopSmartWalletContract } from '../../contracts/dop-smart-wallet/dop-smart-wallet';
+import { BoundParamsStruct } from '../../abi/typechain/DopSmartWallet';
 import { PollingJsonRpcProvider } from '../../provider/polling-json-rpc-provider';
 
 chai.use(chaiAsPromised);
@@ -45,7 +45,7 @@ const { expect } = chai;
 
 let db: Database;
 let merkletree: MerkleTree;
-let wallet: RailgunWallet;
+let wallet: DopWallet;
 let tokenDataGetter: TokenDataGetter;
 let chain: Chain;
 let ethersWallet: Wallet;
@@ -88,7 +88,7 @@ describe('Transaction/ERC20', function test() {
       id: 1,
     };
     merkletree = await MerkleTree.create(db, chain, async () => true);
-    wallet = await RailgunWallet.fromMnemonic(
+    wallet = await DopWallet.fromMnemonic(
       db,
       testEncryptionKey,
       testMnemonic,
@@ -103,9 +103,9 @@ describe('Transaction/ERC20', function test() {
     wallet.loadMerkletree(merkletree);
 
     // Load fake contract
-    ContractStore.railgunSmartWalletContracts[chain.type] = [];
-    ContractStore.railgunSmartWalletContracts[chain.type][chain.id] =
-      new RailgunSmartWalletContract(
+    ContractStore.dopSmartWalletContracts[chain.type] = [];
+    ContractStore.dopSmartWalletContracts[chain.type][chain.id] =
+      new DopSmartWalletContract(
         config.contracts.proxy,
         new PollingJsonRpcProvider('abc', 1, 500),
         new PollingJsonRpcProvider('abc', 1, 500),
@@ -226,7 +226,7 @@ describe('Transaction/ERC20', function test() {
   });
 
   it('Should generate ciphertext decryptable by sender and recipient - with memo', async () => {
-    const wallet2 = await RailgunWallet.fromMnemonic(
+    const wallet2 = await DopWallet.fromMnemonic(
       db,
       testEncryptionKey,
       testMnemonic,
@@ -354,7 +354,7 @@ describe('Transaction/ERC20', function test() {
   });
 
   it('Should generate ciphertext decryptable by sender and recipient - no memo', async () => {
-    const wallet2 = await RailgunWallet.fromMnemonic(
+    const wallet2 = await DopWallet.fromMnemonic(
       db,
       testEncryptionKey,
       testMnemonic,
@@ -474,7 +474,7 @@ describe('Transaction/ERC20', function test() {
   });
 
   it('Should generate ciphertext decryptable by sender and recipient - no senderRandom', async () => {
-    const wallet2 = await RailgunWallet.fromMnemonic(
+    const wallet2 = await DopWallet.fromMnemonic(
       db,
       testEncryptionKey,
       testMnemonic,

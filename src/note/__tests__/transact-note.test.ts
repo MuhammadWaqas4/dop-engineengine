@@ -3,7 +3,7 @@ import chaiAsPromised from 'chai-as-promised';
 import memdown from 'memdown';
 import { randomBytes } from 'ethers';
 import { ContractStore } from '../../contracts/contract-store';
-import { RailgunSmartWalletContract } from '../../contracts/railgun-smart-wallet/railgun-smart-wallet';
+import { DopSmartWalletContract } from '../../contracts/dop-smart-wallet/dop-smart-wallet';
 import { Database } from '../../database/database';
 import { ViewingKeyPair } from '../../key-derivation/wallet-node';
 import { Chain, ChainType } from '../../models/engine-types';
@@ -322,9 +322,9 @@ describe('Note/TransactNote', () => {
     };
 
     // Load fake contract
-    ContractStore.railgunSmartWalletContracts[chain.type] = [];
-    ContractStore.railgunSmartWalletContracts[chain.type][chain.id] =
-      new RailgunSmartWalletContract(
+    ContractStore.dopSmartWalletContracts[chain.type] = [];
+    ContractStore.dopSmartWalletContracts[chain.type][chain.id] =
+      new DopSmartWalletContract(
         config.contracts.proxy,
         new PollingJsonRpcProvider('abc', 1, 500, 1),
         new PollingJsonRpcProvider('abc', 1, 500, 1),

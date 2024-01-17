@@ -2,14 +2,14 @@
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import { Wallet } from 'ethers';
-import { RailgunSmartWalletContract } from '../contracts/railgun-smart-wallet/railgun-smart-wallet';
+import { DopSmartWalletContract } from '../contracts/dop-smart-wallet/dop-smart-wallet';
 import { Chain } from '../models/engine-types';
 import { NFTTokenData, TokenType } from '../models/formatted-types';
 import { ShieldNoteNFT } from '../note/nft/shield-note-nft';
 import { hexToBytes, randomHex } from '../utils/bytes';
-import { RailgunWallet } from '../wallet/railgun-wallet';
+import { DopWallet } from '../wallet/dop-wallet';
 import {
-  awaitRailgunSmartWalletShield,
+  awaitDopSmartWalletShield,
   awaitScan,
   sendTransactionWithLatestNonce,
 } from './helper.test';
@@ -37,9 +37,9 @@ export const mintNFTsID01ForTest = async (nft: TestERC721, ethersWallet: Wallet)
 };
 
 export const shieldNFTForTest = async (
-  wallet: RailgunWallet,
+  wallet: DopWallet,
   ethersWallet: Wallet,
-  railgunSmartWalletContract: RailgunSmartWalletContract,
+  dopSmartWalletContract: DopSmartWalletContract,
   chain: Chain,
   random: string,
   nftAddress: string,
@@ -55,13 +55,13 @@ export const shieldNFTForTest = async (
   const shieldPrivateKey = hexToBytes(randomHex(32));
   const shieldInput = await shield.serialize(shieldPrivateKey, wallet.getViewingKeyPair().pubkey);
 
-  const shieldTx = await railgunSmartWalletContract.generateShield([shieldInput]);
+  const shieldTx = await dopSmartWalletContract.generateShield([shieldInput]);
 
   // Send shield on chain
   const txResponse = await sendTransactionWithLatestNonce(ethersWallet, shieldTx);
 
   await Promise.all([
-    awaitRailgunSmartWalletShield(railgunSmartWalletContract),
+    awaitDopSmartWalletShield(dopSmartWalletContract),
     promiseTimeout(awaitScan(wallet, chain), 10000, 'Timed out waiting for NFT shield'),
     txResponse.wait(),
   ]);

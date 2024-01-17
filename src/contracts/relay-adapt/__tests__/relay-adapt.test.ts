@@ -16,13 +16,13 @@ import { RelayAdaptHelper } from '../relay-adapt-helper';
 import { abi as erc20Abi } from '../../../test/test-erc20-abi.test';
 import { abi as erc721Abi } from '../../../test/test-erc721-abi.test';
 import { config } from '../../../test/config.test';
-import { RailgunWallet } from '../../../wallet/railgun-wallet';
+import { DopWallet } from '../../../wallet/dop-wallet';
 import {
   awaitMultipleScans,
-  awaitRailgunSmartWalletEvent,
-  awaitRailgunSmartWalletShield,
-  awaitRailgunSmartWalletTransact,
-  awaitRailgunSmartWalletUnshield,
+  awaitDopSmartWalletEvent,
+  awaitDopSmartWalletShield,
+  awaitDopSmartWalletTransact,
+  awaitDopSmartWalletUnshield,
   awaitScan,
   getEthersWallet,
   sendTransactionWithLatestNonce,
@@ -36,8 +36,8 @@ import {
 import { ByteLength, hexToBytes, nToHex, randomHex } from '../../../utils/bytes';
 import { Groth16 } from '../../../prover/prover';
 import { Chain, ChainType } from '../../../models/engine-types';
-import { RailgunEngine } from '../../../railgun-engine';
-import { RailgunSmartWalletContract } from '../../railgun-smart-wallet/railgun-smart-wallet';
+import { DopEngine } from '../../../dop-engine';
+import { DopSmartWalletContract } from '../../dop-smart-wallet/dop-smart-wallet';
 import {
   MINIMUM_RELAY_ADAPT_CROSS_CONTRACT_CALLS_GAS_LIMIT,
   RelayAdaptContract,
@@ -63,14 +63,14 @@ const { expect } = chai;
 
 let provider: JsonRpcProvider;
 let chain: Chain;
-let engine: RailgunEngine;
+let engine: DopEngine;
 let ethersWallet: Wallet;
 let snapshot: number;
 let relayAdaptContract: RelayAdaptContract;
-let railgunSmartWalletContract: RailgunSmartWalletContract;
+let dopSmartWalletContract: DopSmartWalletContract;
 let nft: TestERC721;
-let wallet: RailgunWallet;
-let wallet2: RailgunWallet;
+let wallet: DopWallet;
+let wallet2: DopWallet;
 
 const testMnemonic = config.mnemonic;
 const testEncryptionKey = config.encryptionKey;
@@ -93,7 +93,7 @@ describe.only('Relay Adapt', function test() {
   this.timeout(45000);
 
   beforeEach(async () => {
-    engine = new RailgunEngine(
+    engine = new DopEngine(
       'TestRelayAdapt',
       memdown(),
       testArtifactsGetter,
@@ -128,7 +128,7 @@ describe.only('Relay Adapt', function test() {
       DEPLOYMENT_BLOCK,
     );
     await engine.scanHistory(chain);
-    railgunSmartWalletContract = engine.railgunSmartWalletContracts[chain.type][chain.id];
+    dopSmartWalletContract = engine.dopSmartWalletContracts[chain.type][chain.id];
     relayAdaptContract = engine.relayAdaptContracts[chain.type][chain.id];
 
     ethersWallet = getEthersWallet(config.mnemonic, fallbackProvider);
@@ -157,9 +157,9 @@ describe.only('Relay Adapt', function test() {
 
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const [_, txReceipt] = await Promise.all([
-        awaitRailgunSmartWalletEvent(
-          railgunSmartWalletContract,
-          railgunSmartWalletContract.contract.filters.Shield(),
+        awaitDopSmartWalletEvent(
+          dopSmartWalletContract,
+          dopSmartWalletContract.contract.filters.Shield(),
         ),
         tx.wait(),
         promiseTimeout(
@@ -194,7 +194,7 @@ describe.only('Relay Adapt', function test() {
     const txResponse = await sendTransactionWithLatestNonce(ethersWallet, shieldTx);
 
     await Promise.all([
-      awaitRailgunSmartWalletShield(railgunSmartWalletContract),
+      awaitDopSmartWalletShield(dopSmartWalletContract),
       txResponse.wait(),
       promiseTimeout(awaitScan(wallet, chain), 20000),
     ]);
@@ -338,8 +338,8 @@ describe.only('Relay Adapt', function test() {
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [_t, _u, txReceipt] = await Promise.all([
-      awaitRailgunSmartWalletTransact(railgunSmartWalletContract),
-      awaitRailgunSmartWalletUnshield(railgunSmartWalletContract),
+      awaitDopSmartWalletTransact(dopSmartWalletContract),
+      awaitDopSmartWalletUnshield(dopSmartWalletContract),
       txResponse.wait(),
       awaiterScan,
     ]);
@@ -375,7 +375,7 @@ describe.only('Relay Adapt', function test() {
     await mintNFTsID01ForTest(nft, ethersWallet);
 
     // Approve NFT for shield.
-    const approval = await nft.approve.populateTransaction(railgunSmartWalletContract.address, 1);
+    const approval = await nft.approve.populateTransaction(dopSmartWalletContract.address, 1);
     const approvalTxResponse = await sendTransactionWithLatestNonce(ethersWallet, approval);
     await approvalTxResponse.wait();
 
@@ -383,14 +383,14 @@ describe.only('Relay Adapt', function test() {
     const shield = await shieldNFTForTest(
       wallet,
       ethersWallet,
-      railgunSmartWalletContract,
+      dopSmartWalletContract,
       chain,
       randomHex(16),
       NFT_ADDRESS,
       '1',
     );
 
-    const nftBalanceAfterShield = await nft.balanceOf(railgunSmartWalletContract.address);
+    const nftBalanceAfterShield = await nft.balanceOf(dopSmartWalletContract.address);
     expect(nftBalanceAfterShield).to.equal(1n);
 
     const nftTokenData = shield.tokenData as NFTTokenData;
@@ -507,8 +507,8 @@ describe.only('Relay Adapt', function test() {
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [_t, _u, txReceipt] = await Promise.all([
-      awaitRailgunSmartWalletTransact(railgunSmartWalletContract),
-      awaitRailgunSmartWalletUnshield(railgunSmartWalletContract),
+      awaitDopSmartWalletTransact(dopSmartWalletContract),
+      awaitDopSmartWalletUnshield(dopSmartWalletContract),
       txResponse.wait(),
       promiseTimeout(awaitScan(wallet, chain), 20000, 'Timed out waiting for scan'),
     ]);
@@ -519,7 +519,7 @@ describe.only('Relay Adapt', function test() {
     const callResultError = RelayAdaptContract.getRelayAdaptCallError(txReceipt.logs);
     expect(callResultError).to.equal(undefined);
 
-    const nftBalanceAfterReshield = await nft.balanceOf(railgunSmartWalletContract.address);
+    const nftBalanceAfterReshield = await nft.balanceOf(dopSmartWalletContract.address);
     expect(nftBalanceAfterReshield).to.equal(1n);
   }).timeout(60000);
 
@@ -547,14 +547,14 @@ describe.only('Relay Adapt', function test() {
       testEncryptionKey,
       () => {},
     );
-    const transact = await railgunSmartWalletContract.transact(serializedTxs);
+    const transact = await dopSmartWalletContract.transact(serializedTxs);
 
     // Unshield to relay adapt.
     const txTransact = await sendTransactionWithLatestNonce(ethersWallet, transact);
 
     await Promise.all([
-      awaitRailgunSmartWalletTransact(railgunSmartWalletContract),
-      awaitRailgunSmartWalletUnshield(railgunSmartWalletContract),
+      awaitDopSmartWalletTransact(dopSmartWalletContract),
+      awaitDopSmartWalletUnshield(dopSmartWalletContract),
       awaitMultipleScans(wallet, chain, 2),
       txTransact.wait(),
     ]);
@@ -721,7 +721,7 @@ describe.only('Relay Adapt', function test() {
 
     const [txReceipt] = await Promise.all([
       txResponse.wait(),
-      awaitRailgunSmartWalletTransact(railgunSmartWalletContract),
+      awaitDopSmartWalletTransact(dopSmartWalletContract),
     ]);
     if (txReceipt == null) {
       throw new Error('No transaction receipt for relay transaction');
@@ -749,7 +749,7 @@ describe.only('Relay Adapt', function test() {
     );
     const expectedTotalPrivateWethBalance = expectedPrivateWethBalance + 300n; // Add relayer fee.
 
-    const proxyWethBalance = await wethTokenContract.balanceOf(railgunSmartWalletContract.address);
+    const proxyWethBalance = await wethTokenContract.balanceOf(dopSmartWalletContract.address);
     expect(proxyWethBalance).to.equal(expectedTotalPrivateWethBalance);
 
     const privateWalletBalance = await wallet.getBalance(chain, WETH_TOKEN_ADDRESS);
@@ -879,8 +879,8 @@ describe.only('Relay Adapt', function test() {
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [_t, _u, txReceipt] = await Promise.all([
-      awaitRailgunSmartWalletTransact(railgunSmartWalletContract),
-      awaitRailgunSmartWalletUnshield(railgunSmartWalletContract),
+      awaitDopSmartWalletTransact(dopSmartWalletContract),
+      awaitDopSmartWalletUnshield(dopSmartWalletContract),
       txResponse.wait(),
     ]);
     if (txReceipt == null) {
@@ -911,7 +911,7 @@ describe.only('Relay Adapt', function test() {
     );
     const expectedTotalPrivateWethBalance = expectedPrivateWethBalance + 300n; // Add relayer fee.
 
-    const proxyWethBalance = await wethTokenContract.balanceOf(railgunSmartWalletContract.address);
+    const proxyWethBalance = await wethTokenContract.balanceOf(dopSmartWalletContract.address);
     const privateWalletBalance = await wallet.getBalance(chain, WETH_TOKEN_ADDRESS);
 
     expect(proxyWethBalance).to.equal(expectedTotalPrivateWethBalance);
@@ -1044,7 +1044,7 @@ describe.only('Relay Adapt', function test() {
 
     const [txReceipt] = await Promise.all([
       txResponse.wait(),
-      awaitRailgunSmartWalletTransact(railgunSmartWalletContract),
+      awaitDopSmartWalletTransact(dopSmartWalletContract),
     ]);
     if (txReceipt == null) {
       throw new Error('No transaction receipt for relay transaction');
@@ -1078,7 +1078,7 @@ describe.only('Relay Adapt', function test() {
     );
     expect(treasuryBalance).to.equal(299n);
 
-    const proxyWethBalance = await wethTokenContract.balanceOf(railgunSmartWalletContract.address);
+    const proxyWethBalance = await wethTokenContract.balanceOf(dopSmartWalletContract.address);
     const privateWalletBalance = await wallet.getBalance(chain, WETH_TOKEN_ADDRESS);
 
     expect(proxyWethBalance).to.equal(expectedProxyBalance);
@@ -1093,7 +1093,7 @@ describe.only('Relay Adapt', function test() {
     // const treasuryBalance: bigint = await wethTokenContract.balanceOf(config.contracts.treasuryProxy);
     // expect(treasuryBalance).to.equal(250n);
 
-    // const proxyWethBalance = (await wethTokenContract.balanceOf(railgunSmartWalletContract.address));
+    // const proxyWethBalance = (await wethTokenContract.balanceOf(dopSmartWalletContract.address));
     // const privateWalletBalance = await wallet.getBalance(chain, WETH_TOKEN_ADDRESS);
 
     // expect(proxyWethBalance).to.equal(expectedPrivateWethBalance);
@@ -1217,15 +1217,15 @@ describe.only('Relay Adapt', function test() {
       `0x08c379a0000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000205261696c67756e4c6f6769633a204e6f746520616c7265616479207370656e74`,
     );
     expect(parsed?.callIndex).to.equal(undefined);
-    expect(parsed?.error).to.equal('RailgunLogic: Note already spent');
+    expect(parsed?.error).to.equal('DopLogic: Note already spent');
   });
 
-  it('Should parse relay adapt log revert data - string value from railgun cookbook transaction', () => {
+  it('Should parse relay adapt log revert data - string value from dop cookbook transaction', () => {
     const parsed = RelayAdaptContract.parseRelayAdaptReturnValue(
       `0x5c0dee5d00000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000000002d52656c617941646170743a205265667573696e6720746f2063616c6c205261696c67756e20636f6e747261637400000000000000000000000000000000000000`,
     );
     expect(parsed?.callIndex).to.equal(2);
-    expect(parsed?.error).to.equal('RelayAdapt: Refusing to call Railgun contract');
+    expect(parsed?.error).to.equal('RelayAdapt: Refusing to call Dop contract');
   });
 
   it('Should extract call failed index and error message from non-parseable ethers error', () => {

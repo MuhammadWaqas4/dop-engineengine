@@ -6,7 +6,7 @@ import { Memo } from '../memo';
 import WalletInfo from '../../wallet/wallet-info';
 import { config } from '../../test/config.test';
 import { Database } from '../../database/database';
-import { RailgunWallet } from '../../wallet/railgun-wallet';
+import { DopWallet } from '../../wallet/dop-wallet';
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
@@ -15,12 +15,12 @@ const testMnemonic = config.mnemonic;
 const testEncryptionKey = config.encryptionKey;
 
 let db: Database;
-let wallet: RailgunWallet;
+let wallet: DopWallet;
 
 describe('Memo', function run() {
   this.beforeAll(async () => {
     db = new Database(memdown());
-    wallet = await RailgunWallet.fromMnemonic(
+    wallet = await DopWallet.fromMnemonic(
       db,
       testEncryptionKey,
       testMnemonic,

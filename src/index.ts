@@ -1,4 +1,4 @@
-export * from './railgun-engine';
+export * from './dop-engine';
 export * from './abi/abi';
 export * from './chain/chain';
 export * from './contracts';

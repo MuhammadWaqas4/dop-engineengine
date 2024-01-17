@@ -1,6 +1,6 @@
-import { TokenDataStructOutput } from '../abi/typechain/RailgunSmartWallet';
+import { TokenDataStructOutput } from '../abi/typechain/DopSmartWallet';
 import { ContractStore } from '../contracts/contract-store';
-import { RailgunSmartWalletContract } from '../contracts/railgun-smart-wallet/railgun-smart-wallet';
+import { DopSmartWalletContract } from '../contracts/dop-smart-wallet/dop-smart-wallet';
 import { Database } from '../database/database';
 import { Chain } from '../models/engine-types';
 import { TokenData } from '../models/formatted-types';
@@ -13,11 +13,11 @@ const ERC20_TOKEN_HASH_PREFIX = '000000000000000000000000';
 export class TokenDataGetter {
   private db: Database;
 
-  private railgunSmartWalletContract: RailgunSmartWalletContract;
+  private dopSmartWalletContract: DopSmartWalletContract;
 
   constructor(db: Database, chain: Chain) {
     this.db = db;
-    this.railgunSmartWalletContract = ContractStore.getRailgunSmartWalletContract(chain);
+    this.dopSmartWalletContract = ContractStore.getDopSmartWalletContract(chain);
   }
 
   async getTokenDataFromHash(tokenHash: string): Promise<TokenData> {
@@ -39,7 +39,7 @@ export class TokenDataGetter {
       return cachedData;
     }
 
-    const contractData = await this.railgunSmartWalletContract.getNFTTokenData(formattedTokenHash);
+    const contractData = await this.dopSmartWalletContract.getNFTTokenData(formattedTokenHash);
     const tokenData = TokenDataGetter.structToTokenData(contractData);
     await this.cacheNFTTokenData(tokenHash, tokenData);
     return tokenData;

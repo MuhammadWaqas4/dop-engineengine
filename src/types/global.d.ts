@@ -24,7 +24,7 @@ declare type Artifact = {
   vkey: object;
 };
 
-// declare module 'railgun-community-circuit-artifacts' {
+// declare module 'dop-community-circuit-artifacts' {
 //   type ArtifactListMetadata = {
 //     nullifiers: number;
 //     commitments: number;

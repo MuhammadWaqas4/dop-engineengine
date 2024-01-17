@@ -38,7 +38,7 @@ export type MerkletreesMetadata = {
 
 // Calculate tree zero value
 export const MERKLE_ZERO_VALUE: string = formatToByteLength(
-  numberify(keccak256(fromUTF8String('Railgun')))
+  numberify(keccak256(fromUTF8String('Dop')))
     .mod(SNARK_PRIME)
     .toString('hex'),
   ByteLength.UINT_256,

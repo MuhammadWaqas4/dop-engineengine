@@ -96,7 +96,7 @@ describe('Key Derivation/BIP32 BabyJubJub', () => {
       },
     ];
 
-    const invalid = ['m/0/0', 'railgun', "m/0'/0'/x"];
+    const invalid = ['m/0/0', 'dop', "m/0'/0'/x"];
 
     valid.forEach((vector) => {
       expect(getPathSegments(vector.path)).to.deep.equal(vector.segments);

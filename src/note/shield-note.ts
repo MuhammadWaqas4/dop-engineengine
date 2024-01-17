@@ -5,7 +5,7 @@ import { getPublicViewingKey, getSharedSymmetricKey } from '../utils';
 import { ByteLength, combine, hexlify, hexToBigInt, nToHex } from '../utils/bytes';
 import { aes } from '../utils/encryption';
 import { assertValidNoteRandom, assertValidNoteToken, getTokenDataHash } from './note-util';
-import { ShieldRequestStruct } from '../abi/typechain/RailgunSmartWallet';
+import { ShieldRequestStruct } from '../abi/typechain/DopSmartWallet';
 
 export abstract class ShieldNote {
   readonly masterPublicKey: bigint;

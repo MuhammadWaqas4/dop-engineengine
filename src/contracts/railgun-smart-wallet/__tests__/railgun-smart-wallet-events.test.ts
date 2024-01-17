@@ -6,8 +6,8 @@ import { groth16 } from 'snarkjs';
 import { testArtifactsGetter } from '../../../test/helper.test';
 import { Groth16 } from '../../../prover/prover';
 import { Chain, ChainType } from '../../../models/engine-types';
-import { DopEngine } from '../../../railgun-engine';
-import { DopSmartWalletContract } from '../railgun-smart-wallet';
+import { DopEngine } from '../../../dop-engine';
+import { DopSmartWalletContract } from '../dop-smart-wallet';
 import { ContractStore } from '../../contract-store';
 import { PollingJsonRpcProvider } from '../../../provider/polling-json-rpc-provider';
 import { CommitmentEvent } from '../../../models/event-types';
@@ -20,13 +20,13 @@ const { expect } = chai;
 let provider: PollingJsonRpcProvider;
 let chain: Chain;
 let engine: DopEngine;
-let railgunSmartWalletContract: DopSmartWalletContract;
+let dopSmartWalletContract: DopSmartWalletContract;
 
 const testHistoricalEventsForRange = async (startBlock: number, endBlock: number) => {
   let foundShieldEvents = 0;
   let foundTransact = 0;
   let foundNullifiers = 0;
-  await railgunSmartWalletContract.getHistoricalEvents(
+  await dopSmartWalletContract.getHistoricalEvents(
     chain,
     startBlock,
     endBlock,
@@ -104,7 +104,7 @@ describe('Dop Smart Wallet - Live events', function runTests() {
       pollingProvider,
       0,
     );
-    railgunSmartWalletContract = ContractStore.railgunSmartWalletContracts[chain.type][chain.id];
+    dopSmartWalletContract = ContractStore.dopSmartWalletContracts[chain.type][chain.id];
   });
 
   it('Should find legacy Pre-V3 events - live ETH event query', async () => {

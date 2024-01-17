@@ -1,5 +1,5 @@
 import { AbiCoder } from 'ethers';
-import { BoundParamsStruct } from '../abi/typechain/RailgunSmartWallet';
+import { BoundParamsStruct } from '../abi/typechain/DopSmartWallet';
 import { keccak256, hexToBigInt, SNARK_PRIME_BIGINT } from '../utils';
 
 const abiCoder = AbiCoder.defaultAbiCoder();

@@ -16,7 +16,7 @@ import {
 } from '../../models/event-types';
 import { ByteLength, formatToByteLength, hexlify } from '../../utils/bytes';
 import { promiseTimeout } from '../../utils/promises';
-import { ABIRailgunSmartWallet } from '../../abi/abi';
+import { ABIDopSmartWallet } from '../../abi/abi';
 import {
   formatNullifiedEvents,
   formatShieldEvent,
@@ -33,7 +33,7 @@ import {
   processLegacyGeneratedCommitmentEvents,
   processLegacyNullifierEvents,
 } from './legacy-events/legacy-events';
-import { RailgunLogic_LegacyEvents } from '../../abi/typechain/RailgunLogic_LegacyEvents';
+import { DopLogic_LegacyEvents } from '../../abi/typechain/DopLogic_LegacyEvents';
 import {
   CommitmentCiphertextStructOutput,
   CommitmentPreimageStruct,
@@ -46,8 +46,8 @@ import {
   TransactEvent,
   TransactionStruct,
   UnshieldEvent,
-  RailgunSmartWallet,
-} from '../../abi/typechain/RailgunSmartWallet';
+  DopSmartWallet,
+} from '../../abi/typechain/DopSmartWallet';
 import {
   ENGINE_V3_START_BLOCK_NUMBERS_EVM,
   ENGINE_V3_SHIELD_EVENT_UPDATE_03_09_23_BLOCK_NUMBERS_EVM,
@@ -58,52 +58,52 @@ import {
   TypedDeferredTopicFilter,
   TypedEventLog,
 } from '../../abi/typechain/common';
-import { ABIRailgunSmartWallet_Legacy_PreMar23 } from '../../abi/legacy/abi-legacy';
+import { ABIDopSmartWallet_Legacy_PreMar23 } from '../../abi/legacy/abi-legacy';
 import { PollingJsonRpcProvider } from '../../provider/polling-json-rpc-provider';
 import { assertIsPollingProvider } from '../../provider/polling-util';
-import { ShieldEvent as ShieldEvent_LegacyShield_PreMar23 } from '../../abi/typechain/RailgunSmartWallet_Legacy_PreMar23';
+import { ShieldEvent as ShieldEvent_LegacyShield_PreMar23 } from '../../abi/typechain/DopSmartWallet_Legacy_PreMar23';
 
 const SCAN_CHUNKS = 499;
 const MAX_SCAN_RETRIES = 30;
 const EVENTS_SCAN_TIMEOUT = 5000;
 const SCAN_TIMEOUT_ERROR_MESSAGE = 'getLogs request timed out after 5 seconds.';
 
-class RailgunSmartWalletContract extends EventEmitter {
-  readonly contract: RailgunSmartWallet;
+class DopSmartWalletContract extends EventEmitter {
+  readonly contract: DopSmartWallet;
 
-  readonly contractForListeners: RailgunSmartWallet;
+  readonly contractForListeners: DopSmartWallet;
 
   readonly address: string;
 
   readonly chain: Chain;
 
   /**
-   * Connect to Railgun instance on network
-   * @param railgunSmartWalletContractAddress - address of Railgun instance (Proxy contract)
+   * Connect to Dop instance on network
+   * @param dopSmartWalletContractAddress - address of Dop instance (Proxy contract)
    * @param provider - Network provider
    */
   constructor(
-    railgunSmartWalletContractAddress: string,
+    dopSmartWalletContractAddress: string,
     defaultProvider: PollingJsonRpcProvider | FallbackProvider,
     pollingProvider: PollingJsonRpcProvider,
     chain: Chain,
   ) {
     super();
-    this.address = railgunSmartWalletContractAddress;
+    this.address = dopSmartWalletContractAddress;
     this.contract = new Contract(
-      railgunSmartWalletContractAddress,
-      ABIRailgunSmartWallet,
+      dopSmartWalletContractAddress,
+      ABIDopSmartWallet,
       defaultProvider,
-    ) as unknown as RailgunSmartWallet;
+    ) as unknown as DopSmartWallet;
 
     // Because of a 'stallTimeout' bug in Ethers v6, all providers in a FallbackProvider will get called simultaneously.
     // So, we'll use a single json rpc (the first in the FallbackProvider) to poll for the event listeners.
     assertIsPollingProvider(pollingProvider);
     this.contractForListeners = new Contract(
-      railgunSmartWalletContractAddress,
-      ABIRailgunSmartWallet,
+      dopSmartWalletContractAddress,
+      ABIDopSmartWallet,
       pollingProvider,
-    ) as unknown as RailgunSmartWallet;
+    ) as unknown as DopSmartWallet;
 
     this.chain = chain;
   }
@@ -178,14 +178,14 @@ class RailgunSmartWalletContract extends EventEmitter {
         throw new Error('Decode as array, not object');
       }
       Object.keys(obj).forEach((key) => {
-        obj[key] = RailgunSmartWalletContract.recursivelyDecodeResult(obj[key]);
+        obj[key] = DopSmartWalletContract.recursivelyDecodeResult(obj[key]);
       });
       return obj;
     } catch (err) {
       // Result is array.
       return result
         .toArray()
-        .map((item) => RailgunSmartWalletContract.recursivelyDecodeResult(item as Result));
+        .map((item) => DopSmartWalletContract.recursivelyDecodeResult(item as Result));
     }
   };
 
@@ -195,7 +195,7 @@ class RailgunSmartWalletContract extends EventEmitter {
   ): Promise<void> {
     const { treeNumber, nullifier } = event.args.toObject() as NullifiedEvent.OutputObject;
 
-    const nullifierDecoded: string[] = RailgunSmartWalletContract.recursivelyDecodeResult(
+    const nullifierDecoded: string[] = DopSmartWalletContract.recursivelyDecodeResult(
       nullifier as Result,
     );
 
@@ -220,10 +220,10 @@ class RailgunSmartWalletContract extends EventEmitter {
       event.args.toObject() as ShieldEvent.OutputObject;
 
     const commitmentsDecoded: CommitmentPreimageStructOutput[] =
-      RailgunSmartWalletContract.recursivelyDecodeResult(commitments as Result);
+      DopSmartWalletContract.recursivelyDecodeResult(commitments as Result);
     const shieldCiphertextDecoded: ShieldCiphertextStructOutput[] =
-      RailgunSmartWalletContract.recursivelyDecodeResult(shieldCiphertext as Result);
-    const feesDecoded: bigint[] = RailgunSmartWalletContract.recursivelyDecodeResult(
+      DopSmartWalletContract.recursivelyDecodeResult(shieldCiphertext as Result);
+    const feesDecoded: bigint[] = DopSmartWalletContract.recursivelyDecodeResult(
       fees as Result,
     );
 
@@ -250,11 +250,11 @@ class RailgunSmartWalletContract extends EventEmitter {
     const { treeNumber, startPosition, hash, ciphertext } =
       event.args.toObject() as TransactEvent.OutputObject;
 
-    const hashDecoded: string[] = RailgunSmartWalletContract.recursivelyDecodeResult(
+    const hashDecoded: string[] = DopSmartWalletContract.recursivelyDecodeResult(
       hash as Result,
     );
     const ciphertextDecoded: CommitmentCiphertextStructOutput[] =
-      RailgunSmartWalletContract.recursivelyDecodeResult(ciphertext as Result);
+      DopSmartWalletContract.recursivelyDecodeResult(ciphertext as Result);
 
     const args: TransactEvent.OutputObject = {
       treeNumber,
@@ -276,7 +276,7 @@ class RailgunSmartWalletContract extends EventEmitter {
   ) {
     const { to, token, amount, fee } = event.args.toObject() as UnshieldEvent.OutputObject;
 
-    const tokenDecoded: TokenDataStructOutput = RailgunSmartWalletContract.recursivelyDecodeResult(
+    const tokenDecoded: TokenDataStructOutput = DopSmartWalletContract.recursivelyDecodeResult(
       token as unknown as Result,
     );
 
@@ -317,7 +317,7 @@ class RailgunSmartWalletContract extends EventEmitter {
       (event: ContractEventPayload) => {
         try {
           if (event.log.topics.length !== 1) {
-            throw new Error('Requires one topic for railgun events');
+            throw new Error('Requires one topic for dop events');
           }
 
           switch (event.log.topics[0]) {
@@ -327,15 +327,15 @@ class RailgunSmartWalletContract extends EventEmitter {
               return;
             case shieldTopic:
               // eslint-disable-next-line @typescript-eslint/no-floating-promises
-              RailgunSmartWalletContract.handleShieldEvent(event, eventsCommitmentListener);
+              DopSmartWalletContract.handleShieldEvent(event, eventsCommitmentListener);
               return;
             case transactTopic:
               // eslint-disable-next-line @typescript-eslint/no-floating-promises
-              RailgunSmartWalletContract.handleTransactEvent(event, eventsCommitmentListener);
+              DopSmartWalletContract.handleTransactEvent(event, eventsCommitmentListener);
               return;
             case unshieldTopic:
               // eslint-disable-next-line @typescript-eslint/no-floating-promises
-              RailgunSmartWalletContract.handleUnshieldEvent(event, eventsUnshieldListener);
+              DopSmartWalletContract.handleUnshieldEvent(event, eventsUnshieldListener);
               return;
           }
 
@@ -366,7 +366,7 @@ class RailgunSmartWalletContract extends EventEmitter {
       );
       const eventsWithDecodedArgs = events.map((event) => ({
         ...event,
-        args: RailgunSmartWalletContract.recursivelyDecodeResult(event.args),
+        args: DopSmartWalletContract.recursivelyDecodeResult(event.args),
       }));
       return eventsWithDecodedArgs;
     } catch (err) {
@@ -408,7 +408,7 @@ class RailgunSmartWalletContract extends EventEmitter {
   private static getShieldPreMar23EventFilter(): TypedDeferredTopicFilter<ShieldEvent_LegacyShield_PreMar23.Event> {
     // Cannot use `this.contract`, because the "Shield" named event has changed. (It has a different topic).
     const ifaceLegacyShieldPreMar23 = new Interface(
-      ABIRailgunSmartWallet_Legacy_PreMar23.filter((fragment) => fragment.type === 'event'),
+      ABIDopSmartWallet_Legacy_PreMar23.filter((fragment) => fragment.type === 'event'),
     );
     const shieldPreMar23EventFragment = ifaceLegacyShieldPreMar23.getEvent('Shield');
     if (!shieldPreMar23EventFragment) {
@@ -445,9 +445,9 @@ class RailgunSmartWalletContract extends EventEmitter {
     eventsUnshieldListener: EventsUnshieldListener,
     setLastSyncedBlock: (lastSyncedBlock: number) => Promise<void>,
   ) {
-    const engineV3StartBlockNumber = RailgunSmartWalletContract.getEngineV3StartBlockNumber(chain);
+    const engineV3StartBlockNumber = DopSmartWalletContract.getEngineV3StartBlockNumber(chain);
     const engineV3ShieldEventUpdate030923BlockNumber =
-      RailgunSmartWalletContract.getEngineV3ShieldEventUpdate030923BlockNumber(chain);
+      DopSmartWalletContract.getEngineV3ShieldEventUpdate030923BlockNumber(chain);
 
     // TODO: Possible data integrity issue in using commitment block numbers.
     // Unshields and Nullifiers are scanned from the latest commitment block.
@@ -467,7 +467,7 @@ class RailgunSmartWalletContract extends EventEmitter {
 
     // This type includes legacy event types and filters, from before the v3 update.
     // We need to scan prior commitments from these past events, before engineV3StartBlockNumber.
-    const legacyEventsContract = this.contract as unknown as RailgunLogic_LegacyEvents;
+    const legacyEventsContract = this.contract as unknown as DopLogic_LegacyEvents;
     const legacyEventFilterNullifiers = legacyEventsContract.filters.Nullifiers();
     const legacyEventFilterGeneratedCommitmentBatch =
       legacyEventsContract.filters.GeneratedCommitmentBatch();
@@ -476,7 +476,7 @@ class RailgunSmartWalletContract extends EventEmitter {
 
     // This type includes legacy Shield event types and filters, from before the Mar 2023 update.
     const legacyPreMar23EventFilterShield =
-      RailgunSmartWalletContract.getShieldPreMar23EventFilter();
+      DopSmartWalletContract.getShieldPreMar23EventFilter();
 
     EngineDebug.log(
       `[Chain ${this.chain.type}:${this.chain.id}]: Scanning historical events from block ${currentStartBlock} to ${latestBlock}`,
@@ -513,7 +513,7 @@ class RailgunSmartWalletContract extends EventEmitter {
       if (withinV3EventRange) {
         if (withinLegacyV3ShieldEventRange) {
           // Legacy V3 Shield Event - Pre March 2023.
-          const eventsShieldLegacyV3 = RailgunSmartWalletContract.filterEventsByTopic(
+          const eventsShieldLegacyV3 = DopSmartWalletContract.filterEventsByTopic(
             allEvents,
             legacyPreMar23EventFilterShield,
           );
@@ -522,7 +522,7 @@ class RailgunSmartWalletContract extends EventEmitter {
         }
         if (withinNewV3ShieldEventRange) {
           // New V3 Shield Event - After March 2023.
-          const eventsShield = RailgunSmartWalletContract.filterEventsByTopic(
+          const eventsShield = DopSmartWalletContract.filterEventsByTopic(
             allEvents,
             eventFilterShield,
           );
@@ -530,15 +530,15 @@ class RailgunSmartWalletContract extends EventEmitter {
           await processShieldEvents(eventsListener, eventsShield);
         }
 
-        const eventsNullifiers = RailgunSmartWalletContract.filterEventsByTopic(
+        const eventsNullifiers = DopSmartWalletContract.filterEventsByTopic(
           allEvents,
           eventFilterNullified,
         );
-        const eventsTransact = RailgunSmartWalletContract.filterEventsByTopic(
+        const eventsTransact = DopSmartWalletContract.filterEventsByTopic(
           allEvents,
           eventFilterTransact,
         );
-        const eventsUnshield = RailgunSmartWalletContract.filterEventsByTopic(
+        const eventsUnshield = DopSmartWalletContract.filterEventsByTopic(
           allEvents,
           eventFilterUnshield,
         );
@@ -552,15 +552,15 @@ class RailgunSmartWalletContract extends EventEmitter {
       }
 
       if (withinLegacyEventRange) {
-        const legacyEventsNullifiers = RailgunSmartWalletContract.filterEventsByTopic(
+        const legacyEventsNullifiers = DopSmartWalletContract.filterEventsByTopic(
           allEvents,
           legacyEventFilterNullifiers,
         );
-        const legacyEventsGeneratedCommitmentBatch = RailgunSmartWalletContract.filterEventsByTopic(
+        const legacyEventsGeneratedCommitmentBatch = DopSmartWalletContract.filterEventsByTopic(
           allEvents,
           legacyEventFilterGeneratedCommitmentBatch,
         );
-        const legacyEventsEncryptedCommitmentBatch = RailgunSmartWalletContract.filterEventsByTopic(
+        const legacyEventsEncryptedCommitmentBatch = DopSmartWalletContract.filterEventsByTopic(
           allEvents,
           legacyEventFilterEncryptedCommitmentBatch,
         );
@@ -616,7 +616,7 @@ class RailgunSmartWalletContract extends EventEmitter {
 
   /**
    * Create transaction call for ETH
-   * @param transactions - serialized railgun transaction
+   * @param transactions - serialized dop transaction
    * @returns - populated ETH transaction
    */
   transact(transactions: TransactionStruct[]): Promise<ContractTransaction> {
@@ -639,4 +639,4 @@ class RailgunSmartWalletContract extends EventEmitter {
   }
 }
 
-export { RailgunSmartWalletContract };
+export { DopSmartWalletContract };

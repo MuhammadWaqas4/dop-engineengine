@@ -1,4 +1,4 @@
-import { CommitmentPreimageStruct } from '../abi/typechain/RailgunSmartWallet';
+import { CommitmentPreimageStruct } from '../abi/typechain/DopSmartWallet';
 import { UnshieldData } from '../models';
 import { TokenData } from '../models/formatted-types';
 import { ByteLength, nToHex } from '../utils/bytes';

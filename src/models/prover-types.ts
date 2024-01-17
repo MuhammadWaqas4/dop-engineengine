@@ -1,4 +1,4 @@
-import { BoundParamsStruct } from '../abi/typechain/RailgunSmartWallet';
+import { BoundParamsStruct } from '../abi/typechain/DopSmartWallet';
 
 export const enum Circuits {
   OneTwo,
@@ -48,13 +48,13 @@ export type PrivateInputs = {
   valueOut: bigint[];
 };
 
-export type RailgunTransactionRequest = {
+export type DopTransactionRequest = {
   privateInputs: PrivateInputs;
   publicInputs: PublicInputs;
   boundParams: BoundParamsStruct;
 };
 
-export type UnprovedTransactionInputs = RailgunTransactionRequest & {
+export type UnprovedTransactionInputs = DopTransactionRequest & {
   signature: [bigint, bigint, bigint];
 };
 

@@ -1,8 +1,8 @@
 import {
   CommitmentCiphertextStructOutput,
   TransactionStruct,
-} from '../abi/typechain/RailgunSmartWallet';
-import { formatCommitmentCiphertext } from '../contracts/railgun-smart-wallet/events';
+} from '../abi/typechain/DopSmartWallet';
+import { formatCommitmentCiphertext } from '../contracts/dop-smart-wallet/events';
 import { CommitmentCiphertext, CommitmentSummary } from '../models/formatted-types';
 
 export const convertTransactionStructToCommitmentSummary = (

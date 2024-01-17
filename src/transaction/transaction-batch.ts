@@ -1,4 +1,4 @@
-import { RailgunWallet } from '../wallet/railgun-wallet';
+import { DopWallet } from '../wallet/dop-wallet';
 import { Prover, ProverProgressCallback } from '../prover/prover';
 import { HashZero } from '../utils/bytes';
 import { findExactSolutionsOverTargetValue } from '../solutions/simple-solutions';
@@ -19,7 +19,7 @@ import { TransactNote } from '../note/transact-note';
 import { TreeBalance, UnprovedTransactionInputs } from '../models';
 import { getTokenDataHash } from '../note/note-util';
 import { AbstractWallet } from '../wallet';
-import { TransactionStruct } from '../abi/typechain/RailgunSmartWallet';
+import { TransactionStruct } from '../abi/typechain/DopSmartWallet';
 import { isDefined } from '../utils/is-defined';
 
 export const GAS_ESTIMATE_VARIANCE_DUMMY_TO_ACTUAL_TRANSACTION = 7500;
@@ -100,7 +100,7 @@ export class TransactionBatch {
   }
 
   async generateValidSpendingSolutionGroupsAllOutputs(
-    wallet: RailgunWallet,
+    wallet: DopWallet,
   ): Promise<SpendingSolutionGroup[]> {
     const tokenDatas: TokenData[] = this.getOutputTokenDatas();
     const spendingSolutionGroupsPerToken = await Promise.all(
@@ -114,7 +114,7 @@ export class TransactionBatch {
    * @param wallet - wallet to spend from
    */
   private async generateValidSpendingSolutionGroups(
-    wallet: RailgunWallet,
+    wallet: DopWallet,
     tokenData: TokenData,
   ): Promise<SpendingSolutionGroup[]> {
     const tokenHash = getTokenDataHash(tokenData);
@@ -297,7 +297,7 @@ export class TransactionBatch {
    */
   async generateTransactions(
     prover: Prover,
-    wallet: RailgunWallet,
+    wallet: DopWallet,
     encryptionKey: string,
     progressCallback: ProverProgressCallback,
   ): Promise<TransactionStruct[]> {
@@ -388,7 +388,7 @@ export class TransactionBatch {
    */
   async generateDummyTransactions(
     prover: Prover,
-    wallet: RailgunWallet,
+    wallet: DopWallet,
     encryptionKey: string,
   ): Promise<TransactionStruct[]> {
     const spendingSolutionGroups = await this.generateValidSpendingSolutionGroupsAllOutputs(wallet);

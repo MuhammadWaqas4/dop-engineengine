@@ -1,4 +1,4 @@
-import { RailgunWallet } from '../wallet/railgun-wallet';
+import { DopWallet } from '../wallet/dop-wallet';
 import { Prover, ProverProgressCallback } from '../prover/prover';
 import {
   ByteLength,
@@ -20,7 +20,7 @@ import {
   UnprovedTransactionInputs,
   Proof,
   PublicInputs,
-  RailgunTransactionRequest,
+  DopTransactionRequest,
   PrivateInputs,
 } from '../models/prover-types';
 import {
@@ -28,7 +28,7 @@ import {
   CommitmentCiphertextStruct,
   CommitmentPreimageStruct,
   TransactionStruct,
-} from '../abi/typechain/RailgunSmartWallet';
+} from '../abi/typechain/DopSmartWallet';
 import { hashBoundParams } from './bound-params';
 import { getChainFullNetworkID } from '../chain/chain';
 import { UnshieldNoteERC20 } from '../note/erc20/unshield-note-erc20';
@@ -137,10 +137,10 @@ class Transaction {
    * @param encryptionKey - encryption key of wallet
    */
   async generateTransactionRequest(
-    wallet: RailgunWallet,
+    wallet: DopWallet,
     encryptionKey: string,
     overallBatchMinGasPrice = 0n,
-  ): Promise<RailgunTransactionRequest> {
+  ): Promise<DopTransactionRequest> {
     const merkletree = wallet.merkletrees[this.chain.type][this.chain.id];
     const merkleRoot = await merkletree.getRoot(this.spendingTree);
     const spendingKey = await wallet.getSpendingKeyPair(encryptionKey);
@@ -301,13 +301,13 @@ class Transaction {
       nullifyingKey,
     };
 
-    const railgunTransactionRequest: RailgunTransactionRequest = {
+    const dopTransactionRequest: DopTransactionRequest = {
       privateInputs,
       publicInputs,
       boundParams,
     };
 
-    return railgunTransactionRequest;
+    return dopTransactionRequest;
   }
 
   /**
@@ -344,7 +344,7 @@ class Transaction {
    */
   async generateDummyProvedTransaction(
     prover: Prover,
-    transactionRequest: RailgunTransactionRequest,
+    transactionRequest: DopTransactionRequest,
   ): Promise<TransactionStruct> {
     const { publicInputs, boundParams } = transactionRequest;
 

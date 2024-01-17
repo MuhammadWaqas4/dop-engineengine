@@ -15,7 +15,7 @@ import { getTokenDataERC20 } from '../../note/note-util';
 import { ZERO_ADDRESS } from '../../utils/constants';
 import { RelayAdaptHelper } from './relay-adapt-helper';
 import EngineDebug from '../../debugger/debugger';
-import { ShieldRequestStruct } from '../../abi/typechain/RailgunSmartWallet';
+import { ShieldRequestStruct } from '../../abi/typechain/DopSmartWallet';
 import { RelayAdapt, TransactionStruct } from '../../abi/typechain/RelayAdapt';
 import { PayableOverrides } from '../../abi/typechain/common';
 
@@ -36,8 +36,8 @@ export class RelayAdaptContract {
   readonly address: string;
 
   /**
-   * Connect to Railgun instance on network
-   * @param relayAdaptContractAddress - address of Railgun relay adapt contract
+   * Connect to Dop instance on network
+   * @param relayAdaptContractAddress - address of Dop relay adapt contract
    * @param provider - Network provider
    */
   constructor(relayAdaptContractAddress: string, provider: Provider) {

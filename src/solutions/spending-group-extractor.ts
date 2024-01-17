@@ -1,4 +1,4 @@
-import { RailgunEngine } from '../railgun-engine';
+import { DopEngine } from '../dop-engine';
 import { AddressData } from '../key-derivation/bech32';
 import { SpendingSolutionGroup } from '../models/txo-types';
 import { getTokenDataHash } from '../note/note-util';
@@ -31,7 +31,7 @@ export const serializeExtractedSpendingSolutionGroupsData = (
       utxoTxids: data.utxoTxids,
       utxoValues: data.utxoValues.map((val) => val.toString(10)),
       outputValues: data.outputValues.map((val) => val.toString(10)),
-      outputAddresses: data.outputAddressDatas.map(RailgunEngine.encodeAddress),
+      outputAddresses: data.outputAddressDatas.map(DopEngine.encodeAddress),
       tokenAddress: data.tokenData.tokenAddress,
       tokenType: data.tokenData.tokenType,
       tokenSubID: data.tokenData.tokenSubID,

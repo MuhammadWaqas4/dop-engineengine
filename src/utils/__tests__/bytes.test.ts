@@ -113,11 +113,11 @@ const stringVectors = [
   },
   {
     hex: '5261696c67756e',
-    utf8: 'Railgun',
+    utf8: 'Dop',
   },
   {
     hex: '50cdb6f09080805261696c67756e',
-    utf8: 'PͶ𐀀Railgun',
+    utf8: 'PͶ𐀀Dop',
   },
 ];
 

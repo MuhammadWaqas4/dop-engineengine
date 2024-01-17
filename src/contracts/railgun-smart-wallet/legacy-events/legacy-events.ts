@@ -4,7 +4,7 @@ import {
   CommitmentPreimageStructOutput as LegacyCommitmentPreimageStructOutput,
   GeneratedCommitmentBatchEvent as LegacyGeneratedCommitmentBatchEvent,
   CommitmentCiphertextStructOutput as LegacyCommitmentCiphertextStructOutput,
-} from '../../../abi/typechain/RailgunLogic_LegacyEvents';
+} from '../../../abi/typechain/DopLogic_LegacyEvents';
 import {
   CommitmentEvent,
   EventsCommitmentListener,
