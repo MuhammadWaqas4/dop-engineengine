@@ -24,7 +24,7 @@ export const ENGINE_V3_START_BLOCK_NUMBERS_EVM: { [chainID: number]: number } = 
 };
 
 /**
- * Block number per EVM chain designating when the shield event changed on Mar 9, 2023.
+ * Block number per EVM chain designating when the encrypt event changed on Mar 9, 2023.
  */
 export const ENGINE_V3_SHIELD_EVENT_UPDATE_03_09_23_BLOCK_NUMBERS_EVM: {
   [chainID: number]: number;

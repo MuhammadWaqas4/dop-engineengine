@@ -18,7 +18,7 @@ import {
 import {
   awaitMultipleScans,
   awaitRailgunSmartWalletEvent,
-  awaitRailgunSmartWalletShield,
+  awaitRailgunSmartWalletEncrypt,
   awaitScan,
   DECIMALS_18,
   getEthersWallet,
@@ -37,7 +37,7 @@ import {
   CommitmentEvent,
   EngineEvent,
   MerkletreeHistoryScanEventData,
-  UnshieldStoredEvent,
+  DecryptStoredEvent,
 } from '../../../models/event-types';
 import { Memo } from '../../../note/memo';
 import { ViewOnlyWallet } from '../../../wallet/view-only-wallet';
@@ -48,20 +48,20 @@ import { RailgunEngine } from '../../../railgun-engine';
 import { RailgunSmartWalletContract } from '../railgun-smart-wallet';
 import { MEMO_SENDER_RANDOM_NULL } from '../../../models/transaction-constants';
 import { TransactNote } from '../../../note/transact-note';
-import { ShieldNoteERC20 } from '../../../note/erc20/shield-note-erc20';
+import { EncryptNoteERC20 } from '../../../note/erc20/encrypt-note-erc20';
 import {
   GAS_ESTIMATE_VARIANCE_DUMMY_TO_ACTUAL_TRANSACTION,
   TransactionBatch,
 } from '../../../transaction/transaction-batch';
-import { UnshieldNoteERC20 } from '../../../note/erc20/unshield-note-erc20';
+import { DecryptNoteERC20 } from '../../../note/erc20/decrypt-note-erc20';
 import { getTokenDataERC20 } from '../../../note/note-util';
 import { TokenDataGetter } from '../../../token/token-data-getter';
 import { ContractStore } from '../../contract-store';
-import { mintNFTsID01ForTest, shieldNFTForTest } from '../../../test/shared-test.test';
+import { mintNFTsID01ForTest, encryptNFTForTest } from '../../../test/shared-test.test';
 import { TestERC20 } from '../../../test/abi/typechain/TestERC20';
 import { TestERC721 } from '../../../test/abi/typechain/TestERC721';
 import { TransactionHistoryReceiveTokenAmount } from '../../../models/wallet-types';
-import { ShieldRequestStruct } from '../../../abi/typechain/RailgunSmartWallet';
+import { EncryptRequestStruct } from '../../../abi/typechain/RailgunSmartWallet';
 import { PollingJsonRpcProvider } from '../../../provider/polling-json-rpc-provider';
 import { createPollingJsonRpcProviderForListeners } from '../../../provider/polling-util';
 import { isDefined } from '../../../utils/is-defined';
@@ -89,7 +89,7 @@ const NFT_ADDRESS = config.contracts.testERC721;
 const RANDOM = randomHex(16);
 const VALUE = BigInt(10000) * DECIMALS_18;
 
-let testShield: (value?: bigint) => Promise<TransactionReceipt | null>;
+let testEncrypt: (value?: bigint) => Promise<TransactionReceipt | null>;
 
 describe('Railgun Smart Wallet', function runTests() {
   this.timeout(20000);
@@ -144,23 +144,23 @@ describe('Railgun Smart Wallet', function runTests() {
       undefined, // creationBlockNumbers
     );
 
-    // fn to create shield tx for tests
+    // fn to create encrypt tx for tests
     // tx should be complete and balances updated after await
-    testShield = async (
+    testEncrypt = async (
       value: bigint = BigInt(110000) * DECIMALS_18,
     ): Promise<TransactionReceipt | null> => {
-      // Create shield
-      const shield = new ShieldNoteERC20(wallet.masterPublicKey, RANDOM, value, TOKEN_ADDRESS);
-      const shieldPrivateKey = hexToBytes(randomHex(32));
-      const shieldInput = await shield.serialize(
-        shieldPrivateKey,
+      // Create encrypt
+      const encrypt = new EncryptNoteERC20(wallet.masterPublicKey, RANDOM, value, TOKEN_ADDRESS);
+      const encryptPrivateKey = hexToBytes(randomHex(32));
+      const encryptInput = await encrypt.serialize(
+        encryptPrivateKey,
         wallet.getViewingKeyPair().pubkey,
       );
 
-      const shieldTx = await railgunSmartWalletContract.generateShield([shieldInput]);
+      const encryptTx = await railgunSmartWalletContract.generateEncrypt([encryptInput]);
 
-      // Send shield on chain
-      const tx = await sendTransactionWithLatestNonce(ethersWallet, shieldTx);
+      // Send encrypt on chain
+      const tx = await sendTransactionWithLatestNonce(ethersWallet, encryptTx);
       return (await Promise.all([tx.wait(), awaitScan(wallet, chain)]))[0];
     };
   });
@@ -193,18 +193,18 @@ describe('Railgun Smart Wallet', function runTests() {
     }
 
     // Token for relayer fee
-    await testShield();
+    await testEncrypt();
     const tokenData = getTokenDataERC20(TOKEN_ADDRESS);
 
     // Mint NFTs with tokenIDs 0 and 1 into public balance.
     await mintNFTsID01ForTest(nft, ethersWallet);
 
-    // Approve NFT for shield.
+    // Approve NFT for encrypt.
     const approval = await nft.approve.populateTransaction(railgunSmartWalletContract.address, 1);
     const approvalTxResponse = await sendTransactionWithLatestNonce(ethersWallet, approval);
     await approvalTxResponse.wait();
 
-    const shield = await shieldNFTForTest(
+    const encrypt = await encryptNFTForTest(
       wallet,
       ethersWallet,
       railgunSmartWalletContract,
@@ -240,7 +240,7 @@ describe('Railgun Smart Wallet', function runTests() {
       wallet2.addressKeys,
       wallet.addressKeys,
       RANDOM,
-      shield.tokenData as NFTTokenData,
+      encrypt.tokenData as NFTTokenData,
       wallet.getViewingKeyPair(),
       false, // showSenderAddressToRecipient
       undefined, // memoText
@@ -408,12 +408,12 @@ describe('Railgun Smart Wallet', function runTests() {
     }
     const fees = await railgunSmartWalletContract.fees();
     expect(fees).to.be.an('object');
-    expect(fees.shield).to.be.a('bigint');
-    expect(fees.unshield).to.be.a('bigint');
+    expect(fees.encrypt).to.be.a('bigint');
+    expect(fees.decrypt).to.be.a('bigint');
     expect(fees.nft).to.be.a('bigint');
   });
 
-  it('[HH] Should find shield, transact and unshield as historical events', async function run() {
+  it('[HH] Should find encrypt, transact and decrypt as historical events', async function run() {
     if (!isDefined(process.env.RUN_HARDHAT_TESTS)) {
       this.skip();
       return;
@@ -427,9 +427,9 @@ describe('Railgun Smart Wallet', function runTests() {
     const nullifiersListener = async (nullifiers: Nullifier[]) => {
       resultNullifiers.push(...nullifiers);
     };
-    let resultUnshields: UnshieldStoredEvent[] = [];
-    const unshieldListener = async (unshields: UnshieldStoredEvent[]) => {
-      resultUnshields.push(...unshields);
+    let resultDecrypts: DecryptStoredEvent[] = [];
+    const decryptListener = async (decrypts: DecryptStoredEvent[]) => {
+      resultDecrypts.push(...decrypts);
     };
 
     let startingBlock = await provider.getBlockNumber();
@@ -438,7 +438,7 @@ describe('Railgun Smart Wallet', function runTests() {
     await railgunSmartWalletContract.setTreeUpdateListeners(
       eventsListener,
       nullifiersListener,
-      unshieldListener,
+      decryptListener,
     );
 
     // Subscribe to Nullified event
@@ -448,20 +448,20 @@ describe('Railgun Smart Wallet', function runTests() {
     };
     railgunSmartWalletContract.on(EngineEvent.ContractNullifierReceived, nullifiersListener2);
 
-    const txResponse = await testShield();
+    const txResponse = await testEncrypt();
     if (txResponse == null) {
-      throw new Error('No shield transaction response');
+      throw new Error('No encrypt transaction response');
     }
 
     // Listeners should have been updated automatically by contract events.
 
-    expect(resultEvent).to.be.an('object', 'No event in history for shield');
+    expect(resultEvent).to.be.an('object', 'No event in history for encrypt');
     expect((resultEvent as CommitmentEvent).txid).to.equal(hexlify(txResponse.hash));
     expect(resultNullifiers.length).to.equal(0);
 
     resultEvent = undefined;
     resultNullifiers = [];
-    resultUnshields = [];
+    resultDecrypts = [];
 
     let latestBlock = await provider.getBlockNumber();
 
@@ -472,16 +472,16 @@ describe('Railgun Smart Wallet', function runTests() {
       () => engine.getNextStartingBlockSlowScan(chain),
       eventsListener,
       nullifiersListener,
-      unshieldListener,
+      decryptListener,
       async () => {},
     );
 
     // Listeners should have been updated by historical event scan.
 
-    expect(resultEvent).to.be.an('object', 'No event in history for shield');
+    expect(resultEvent).to.be.an('object', 'No event in history for encrypt');
     expect((resultEvent as unknown as CommitmentEvent).txid).to.equal(hexlify(txResponse.hash));
     expect(resultNullifiers.length).to.equal(0);
-    expect(resultUnshields.length).to.equal(0);
+    expect(resultDecrypts.length).to.equal(0);
 
     startingBlock = await provider.getBlockNumber();
 
@@ -502,7 +502,7 @@ describe('Railgun Smart Wallet', function runTests() {
         undefined, // memoText
       ),
     );
-    transactionBatch.addUnshieldData({
+    transactionBatch.addDecryptData({
       toAddress: ethersWallet.address,
       value: 100n,
       tokenData,
@@ -535,8 +535,8 @@ describe('Railgun Smart Wallet', function runTests() {
     expect((resultEvent as unknown as CommitmentEvent).txid).to.equal(txid);
     expect(resultNullifiers[0].txid).to.equal(txid);
     expect(resultNullifiers2[0].txid).to.equal(txid);
-    expect(resultUnshields.length).to.equal(1);
-    expect(resultUnshields[0].txid).to.equal(txid);
+    expect(resultDecrypts.length).to.equal(1);
+    expect(resultDecrypts[0].txid).to.equal(txid);
 
     resultEvent = undefined;
     resultNullifiers = [];
@@ -550,7 +550,7 @@ describe('Railgun Smart Wallet', function runTests() {
       () => engine.getNextStartingBlockSlowScan(chain),
       eventsListener,
       nullifiersListener,
-      unshieldListener,
+      decryptListener,
       async () => {},
     );
 
@@ -563,7 +563,7 @@ describe('Railgun Smart Wallet', function runTests() {
     expect(resultNullifiers.length).to.equal(1);
   }).timeout(120000);
 
-  it('[HH] Should create 11 shields which generates 2 unshield events', async function run() {
+  it('[HH] Should create 11 encrypts which generates 2 decrypt events', async function run() {
     if (!isDefined(process.env.RUN_HARDHAT_TESTS)) {
       this.skip();
       return;
@@ -571,26 +571,26 @@ describe('Railgun Smart Wallet', function runTests() {
 
     const startingBlock = await provider.getBlockNumber();
 
-    const shieldInputs: ShieldRequestStruct[] = [];
+    const encryptInputs: EncryptRequestStruct[] = [];
     for (let i = 0; i < 11; i += 1) {
-      const shield = new ShieldNoteERC20(wallet.masterPublicKey, RANDOM, 100000000n, TOKEN_ADDRESS);
-      const shieldPrivateKey = hexToBytes(randomHex(32));
-      shieldInputs.push(
+      const encrypt = new EncryptNoteERC20(wallet.masterPublicKey, RANDOM, 100000000n, TOKEN_ADDRESS);
+      const encryptPrivateKey = hexToBytes(randomHex(32));
+      encryptInputs.push(
         // eslint-disable-next-line no-await-in-loop
-        await shield.serialize(shieldPrivateKey, wallet.getViewingKeyPair().pubkey),
+        await encrypt.serialize(encryptPrivateKey, wallet.getViewingKeyPair().pubkey),
       );
     }
-    const shieldTx = await railgunSmartWalletContract.generateShield(shieldInputs);
+    const encryptTx = await railgunSmartWalletContract.generateEncrypt(encryptInputs);
 
-    // Send shield on chain
-    const tx = await sendTransactionWithLatestNonce(ethersWallet, shieldTx);
+    // Send encrypt on chain
+    const tx = await sendTransactionWithLatestNonce(ethersWallet, encryptTx);
     await Promise.all([tx.wait(), awaitScan(wallet, chain)]);
 
     const transactionBatch = new TransactionBatch(chain);
 
     const tokenData = getTokenDataERC20(TOKEN_ADDRESS);
 
-    transactionBatch.addUnshieldData({
+    transactionBatch.addDecryptData({
       toAddress: ethersWallet.address,
       value: 1097250000n, // 11 * 100000000 * 0.9975
       tokenData,
@@ -618,40 +618,40 @@ describe('Railgun Smart Wallet', function runTests() {
 
     expect(history.length).to.equal(2);
 
-    const singleShieldHistory: TransactionHistoryReceiveTokenAmount = {
+    const singleEncryptHistory: TransactionHistoryReceiveTokenAmount = {
       tokenData: getTokenDataERC20(TOKEN_ADDRESS),
       tokenHash: tokenFormatted,
       amount: 99750000n, // 100000000 * 0.9975
       memoText: undefined,
       senderAddress: undefined,
-      shieldFee: '250000', // 100000000 * 0.0025
+      encryptFee: '250000', // 100000000 * 0.0025
     };
 
-    // Check first output: Shield (receive only).
+    // Check first output: Encrypt (receive only).
     expect(history[0].receiveTokenAmounts).deep.eq([
-      singleShieldHistory,
-      singleShieldHistory,
-      singleShieldHistory,
-      singleShieldHistory,
-      singleShieldHistory,
-      singleShieldHistory,
-      singleShieldHistory,
-      singleShieldHistory,
-      singleShieldHistory,
-      singleShieldHistory,
-      singleShieldHistory, // x11
+      singleEncryptHistory,
+      singleEncryptHistory,
+      singleEncryptHistory,
+      singleEncryptHistory,
+      singleEncryptHistory,
+      singleEncryptHistory,
+      singleEncryptHistory,
+      singleEncryptHistory,
+      singleEncryptHistory,
+      singleEncryptHistory,
+      singleEncryptHistory, // x11
     ]);
     expect(history[0].transferTokenAmounts).deep.eq([]);
     expect(history[0].relayerFeeTokenAmount).eq(undefined);
     expect(history[0].changeTokenAmounts).deep.eq([]);
-    expect(history[0].unshieldTokenAmounts).deep.eq([]);
+    expect(history[0].decryptTokenAmounts).deep.eq([]);
 
-    // Check first output: Unshield.
+    // Check first output: Decrypt.
     expect(history[1].receiveTokenAmounts).deep.eq([]);
     expect(history[1].transferTokenAmounts).deep.eq([]);
     expect(history[1].relayerFeeTokenAmount).eq(undefined);
     expect(history[1].changeTokenAmounts).deep.eq([]);
-    expect(history[1].unshieldTokenAmounts).deep.eq([
+    expect(history[1].decryptTokenAmounts).deep.eq([
       {
         tokenData: getTokenDataERC20(TOKEN_ADDRESS),
         tokenHash: tokenFormatted,
@@ -659,7 +659,7 @@ describe('Railgun Smart Wallet', function runTests() {
         recipientAddress: ethersWallet.address,
         memoText: undefined,
         senderAddress: undefined,
-        unshieldFee: '2493750',
+        decryptFee: '2493750',
       },
       {
         tokenData: getTokenDataERC20(TOKEN_ADDRESS),
@@ -668,7 +668,7 @@ describe('Railgun Smart Wallet', function runTests() {
         recipientAddress: ethersWallet.address,
         memoText: undefined,
         senderAddress: undefined,
-        unshieldFee: '249375', // 1097250000n * 1/11 * 0.9975
+        decryptFee: '249375', // 1097250000n * 1/11 * 0.9975
       },
     ]);
   }).timeout(120000);
@@ -679,7 +679,7 @@ describe('Railgun Smart Wallet', function runTests() {
       return;
     }
 
-    await testShield();
+    await testEncrypt();
 
     const tree = 0;
 
@@ -708,13 +708,13 @@ describe('Railgun Smart Wallet', function runTests() {
       this.skip();
       return;
     }
-    const unshield = new UnshieldNoteERC20(ethersWallet.address, 100n, await token.getAddress());
-    const contractHash = await railgunSmartWalletContract.hashCommitment(unshield.preImage);
+    const decrypt = new DecryptNoteERC20(ethersWallet.address, 100n, await token.getAddress());
+    const contractHash = await railgunSmartWalletContract.hashCommitment(decrypt.preImage);
 
-    expect(hexlify(contractHash)).to.equal(unshield.hashHex);
+    expect(hexlify(contractHash)).to.equal(decrypt.hashHex);
   });
 
-  it('[HH] Should shield erc20', async function run() {
+  it('[HH] Should encrypt erc20', async function run() {
     if (!isDefined(process.env.RUN_HARDHAT_TESTS)) {
       this.skip();
       return;
@@ -730,16 +730,16 @@ describe('Railgun Smart Wallet', function runTests() {
     );
     const merkleRootBefore = await railgunSmartWalletContract.merkleRoot();
 
-    // Create shield
-    const shield = new ShieldNoteERC20(wallet.masterPublicKey, RANDOM, VALUE, TOKEN_ADDRESS);
-    const shieldPrivateKey = hexToBytes(randomHex(32));
-    const shieldInput = await shield.serialize(shieldPrivateKey, wallet.getViewingKeyPair().pubkey);
+    // Create encrypt
+    const encrypt = new EncryptNoteERC20(wallet.masterPublicKey, RANDOM, VALUE, TOKEN_ADDRESS);
+    const encryptPrivateKey = hexToBytes(randomHex(32));
+    const encryptInput = await encrypt.serialize(encryptPrivateKey, wallet.getViewingKeyPair().pubkey);
 
-    const shieldTx = await railgunSmartWalletContract.generateShield([shieldInput]);
+    const encryptTx = await railgunSmartWalletContract.generateEncrypt([encryptInput]);
 
-    const txResponse = await sendTransactionWithLatestNonce(ethersWallet, shieldTx);
+    const txResponse = await sendTransactionWithLatestNonce(ethersWallet, encryptTx);
     await Promise.all([
-      awaitRailgunSmartWalletShield(railgunSmartWalletContract),
+      awaitRailgunSmartWalletEncrypt(railgunSmartWalletContract),
       promiseTimeout(awaitScan(wallet, chain), 5000),
       txResponse.wait(),
     ]);
@@ -749,13 +749,13 @@ describe('Railgun Smart Wallet', function runTests() {
     expect(result.startPosition).to.equal(0);
     expect(result.commitments.length).to.equal(1);
 
-    const merkleRootAfterShield = await railgunSmartWalletContract.merkleRoot();
+    const merkleRootAfterEncrypt = await railgunSmartWalletContract.merkleRoot();
 
     // Check merkle root changed
-    expect(merkleRootAfterShield).not.to.equal(merkleRootBefore);
+    expect(merkleRootAfterEncrypt).not.to.equal(merkleRootBefore);
   }).timeout(20000);
 
-  it('[HH] Should shield erc721', async function run() {
+  it('[HH] Should encrypt erc721', async function run() {
     if (!isDefined(process.env.RUN_HARDHAT_TESTS)) {
       this.skip();
       return;
@@ -774,13 +774,13 @@ describe('Railgun Smart Wallet', function runTests() {
     // Mint NFTs with tokenIDs 0 and 1 into public balance.
     await mintNFTsID01ForTest(nft, ethersWallet);
 
-    // Approve NFT for shield.
+    // Approve NFT for encrypt.
     const approval = await nft.approve.populateTransaction(railgunSmartWalletContract.address, 1);
     const approvalTxResponse = await sendTransactionWithLatestNonce(ethersWallet, approval);
     await approvalTxResponse.wait();
 
-    // Create shield
-    const shield = await shieldNFTForTest(
+    // Create encrypt
+    const encrypt = await encryptNFTForTest(
       wallet,
       ethersWallet,
       railgunSmartWalletContract,
@@ -791,7 +791,7 @@ describe('Railgun Smart Wallet', function runTests() {
     );
 
     // Check tokenData stored in contract.
-    const { tokenHash } = shield;
+    const { tokenHash } = encrypt;
     const tokenDataGetter = new TokenDataGetter(engine.db, chain);
     const onChainTokenData = await tokenDataGetter.getNFTTokenData(tokenHash);
     expect(onChainTokenData.tokenAddress.toLowerCase()).to.equal(NFT_ADDRESS.toLowerCase());
@@ -809,10 +809,10 @@ describe('Railgun Smart Wallet', function runTests() {
     expect(result.startPosition).to.equal(0);
     expect(result.commitments.length).to.equal(1);
 
-    const merkleRootAfterShield = await railgunSmartWalletContract.merkleRoot();
+    const merkleRootAfterEncrypt = await railgunSmartWalletContract.merkleRoot();
 
     // Check merkle root changed
-    expect(merkleRootAfterShield).not.to.equal(merkleRootBefore);
+    expect(merkleRootAfterEncrypt).not.to.equal(merkleRootBefore);
   }).timeout(20000);
 
   it('[HH] Should create transactions and parse tree updates', async function run() {
@@ -821,8 +821,8 @@ describe('Railgun Smart Wallet', function runTests() {
       return;
     }
 
-    await testShield(1000n);
-    const merkleRootAfterShield = await railgunSmartWalletContract.merkleRoot();
+    await testEncrypt(1000n);
+    const merkleRootAfterEncrypt = await railgunSmartWalletContract.merkleRoot();
 
     let result!: CommitmentEvent;
     await railgunSmartWalletContract.setTreeUpdateListeners(
@@ -850,7 +850,7 @@ describe('Railgun Smart Wallet', function runTests() {
         undefined, // memoText
       ),
     );
-    transactionBatch.addUnshieldData({
+    transactionBatch.addDecryptData({
       toAddress: ethersWallet.address,
       value: 100n,
       tokenData,
@@ -879,7 +879,7 @@ describe('Railgun Smart Wallet', function runTests() {
 
     // Check merkle root changed
     const merkleRootAfterTransact = await railgunSmartWalletContract.merkleRoot();
-    expect(merkleRootAfterTransact).to.not.equal(merkleRootAfterShield);
+    expect(merkleRootAfterTransact).to.not.equal(merkleRootAfterEncrypt);
 
     // Check result
     expect(result.treeNumber).to.equal(0);

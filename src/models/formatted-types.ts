@@ -42,7 +42,7 @@ export type NFTTokenData = TokenData & {
 export type EncryptedData = [string, string];
 
 export enum CommitmentType {
-  ShieldCommitment = 'ShieldCommitment',
+  EncryptCommitment = 'EncryptCommitment',
   TransactCommitment = 'TransactCommitment',
   LegacyEncryptedCommitment = 'LegacyEncryptedCommitment',
   LegacyGeneratedCommitment = 'LegacyGeneratedCommitment',
@@ -73,7 +73,7 @@ export type NoteSerialized = {
   outputType: Optional<OutputType>;
   senderAddress: Optional<string>;
   memoText: Optional<string>;
-  shieldFee: Optional<string>;
+  encryptFee: Optional<string>;
   blockNumber: Optional<number>;
 };
 
@@ -102,9 +102,9 @@ export type PreImage = {
   value: string;
 };
 
-export type ShieldCiphertext = {
+export type EncryptCiphertext = {
   encryptedBundle: [string, string, string];
-  shieldKey: string;
+  encryptKey: string;
 };
 
 export type CommitmentCiphertext = {
@@ -123,11 +123,11 @@ type CommitmentShared = {
   timestamp: Optional<number>;
 };
 
-export type ShieldCommitment = CommitmentShared & {
-  commitmentType: CommitmentType.ShieldCommitment;
+export type EncryptCommitment = CommitmentShared & {
+  commitmentType: CommitmentType.EncryptCommitment;
   preImage: PreImage;
   encryptedBundle: [string, string, string];
-  shieldKey: string;
+  encryptKey: string;
   fee: Optional<string>;
 };
 
@@ -137,7 +137,7 @@ export type TransactCommitment = CommitmentShared & {
 };
 
 export type Commitment =
-  | ShieldCommitment
+  | EncryptCommitment
   | TransactCommitment
   | LegacyGeneratedCommitment
   | LegacyEncryptedCommitment;
@@ -195,9 +195,9 @@ export type CommitmentSummary = {
   commitmentHash: string;
 };
 
-export type RelayAdaptShieldERC20Recipient = { tokenAddress: string; recipientAddress: string };
+export type RelayAdaptEncryptERC20Recipient = { tokenAddress: string; recipientAddress: string };
 
-export type RelayAdaptShieldNFTRecipient = {
+export type RelayAdaptEncryptNFTRecipient = {
   nftTokenData: NFTTokenData;
   recipientAddress: string;
 };

@@ -82,8 +82,8 @@ export class TransactNote {
 
   readonly memoText: Optional<string>;
 
-  // Only used during serialization/storage of ShieldCommitments.
-  readonly shieldFee: Optional<string>;
+  // Only used during serialization/storage of EncryptCommitments.
+  readonly encryptFee: Optional<string>;
 
   readonly blockNumber: Optional<number>;
 
@@ -103,7 +103,7 @@ export class TransactNote {
     annotationData: string,
     outputType: Optional<OutputType>,
     memoText: Optional<string>,
-    shieldFee: Optional<string>,
+    encryptFee: Optional<string>,
     blockNumber: Optional<number>,
   ) {
     assertValidNoteRandom(random);
@@ -123,7 +123,7 @@ export class TransactNote {
     this.hash = this.getHash();
     this.annotationData = annotationData;
     this.memoText = memoText;
-    this.shieldFee = shieldFee;
+    this.encryptFee = encryptFee;
     this.blockNumber = blockNumber;
   }
 
@@ -157,7 +157,7 @@ export class TransactNote {
       annotationData,
       outputType,
       memoText,
-      undefined, // shieldFee
+      undefined, // encryptFee
       undefined, // blockNumber
     );
   }
@@ -414,7 +414,7 @@ export class TransactNote {
         annotationData,
         undefined, // outputType
         memoText,
-        undefined, // shieldFee
+        undefined, // encryptFee
         blockNumber,
       );
     }
@@ -450,7 +450,7 @@ export class TransactNote {
       annotationData,
       undefined, // outputType
       memoText,
-      undefined, // shieldFee
+      undefined, // encryptFee
       blockNumber,
     );
   }
@@ -463,7 +463,7 @@ export class TransactNote {
       random: formatToByteLength(this.random, ByteLength.UINT_128, prefix),
       annotationData: this.annotationData,
       outputType: this.outputType ?? undefined,
-      shieldFee: this.shieldFee ?? undefined,
+      encryptFee: this.encryptFee ?? undefined,
     };
   }
 
@@ -472,7 +472,7 @@ export class TransactNote {
    * @returns serialized note
    */
   serialize(prefix?: boolean): NoteSerialized {
-    const { npk, token, value, random, annotationData, outputType, shieldFee } =
+    const { npk, token, value, random, annotationData, outputType, encryptFee } =
       this.formatFields(prefix);
     return {
       npk,
@@ -484,7 +484,7 @@ export class TransactNote {
       recipientAddress: encodeAddress(this.receiverAddressData),
       senderAddress: this.senderAddressData ? encodeAddress(this.senderAddressData) : undefined,
       memoText: this.memoText,
-      shieldFee,
+      encryptFee,
       blockNumber: this.blockNumber,
     };
   }
@@ -542,7 +542,7 @@ export class TransactNote {
       noteData.annotationData,
       noteData.outputType ?? undefined,
       noteData.memoText ?? undefined,
-      noteData.shieldFee ?? undefined,
+      noteData.encryptFee ?? undefined,
       noteData.blockNumber ?? undefined,
     );
   }
@@ -578,7 +578,7 @@ export class TransactNote {
       annotationData,
       undefined, // outputType
       noteData.memoText ?? undefined,
-      undefined, // shieldFee
+      undefined, // encryptFee
       noteData.blockNumber ?? undefined,
     );
   }
@@ -603,7 +603,7 @@ export class TransactNote {
       this.annotationData,
       this.outputType,
       this.memoText,
-      this.shieldFee,
+      this.encryptFee,
       undefined, // blockNumber
     );
   }
@@ -612,10 +612,10 @@ export class TransactNote {
     notes.reduce((left, right) => left + right.value, BigInt(0));
 
   /**
-   * TransactNote with tokenData and value, for a mimic Unshield Note during solution processing.
+   * TransactNote with tokenData and value, for a mimic Decrypt Note during solution processing.
    * All other fields are placeholders.
    */
-  static createNullUnshieldNote(tokenData: TokenData, value: bigint): TransactNote {
+  static createNullDecryptNote(tokenData: TokenData, value: bigint): TransactNote {
     const nullAddressData: AddressData = {
       masterPublicKey: 0n,
       viewingPublicKey: nToBytes(0n, ByteLength.UINT_256),
@@ -629,7 +629,7 @@ export class TransactNote {
       '', // annotationData
       undefined, // outputType
       undefined, // memoText
-      undefined, // shieldFee
+      undefined, // encryptFee
       undefined, // blockNumber
     );
   }

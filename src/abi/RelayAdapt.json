@@ -140,8 +140,8 @@
                 "type": "uint72"
               },
               {
-                "internalType": "enum UnshieldType",
-                "name": "unshield",
+                "internalType": "enum DecryptType",
+                "name": "decrypt",
                 "type": "uint8"
               },
               {
@@ -232,7 +232,7 @@
               }
             ],
             "internalType": "struct CommitmentPreimage",
-            "name": "unshieldPreimage",
+            "name": "decryptPreimage",
             "type": "tuple"
           }
         ],
@@ -434,8 +434,8 @@
                 "type": "uint72"
               },
               {
-                "internalType": "enum UnshieldType",
-                "name": "unshield",
+                "internalType": "enum DecryptType",
+                "name": "decrypt",
                 "type": "uint8"
               },
               {
@@ -526,7 +526,7 @@
               }
             ],
             "internalType": "struct CommitmentPreimage",
-            "name": "unshieldPreimage",
+            "name": "decryptPreimage",
             "type": "tuple"
           }
         ],
@@ -636,21 +636,21 @@
               },
               {
                 "internalType": "bytes32",
-                "name": "shieldKey",
+                "name": "encryptKey",
                 "type": "bytes32"
               }
             ],
-            "internalType": "struct ShieldCiphertext",
+            "internalType": "struct EncryptCiphertext",
             "name": "ciphertext",
             "type": "tuple"
           }
         ],
-        "internalType": "struct ShieldRequest[]",
-        "name": "_shieldRequests",
+        "internalType": "struct EncryptRequest[]",
+        "name": "_encryptRequests",
         "type": "tuple[]"
       }
     ],
-    "name": "shield",
+    "name": "encrypt",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

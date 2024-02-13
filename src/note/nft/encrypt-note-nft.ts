@@ -1,7 +1,7 @@
 import { NFTTokenData } from '../../models/formatted-types';
-import { ShieldNote } from '../shield-note';
+import { EncryptNote } from '../encrypt-note';
 
-export class ShieldNoteNFT extends ShieldNote {
+export class EncryptNoteNFT extends EncryptNote {
   constructor(masterPublicKey: bigint, random: string, value: bigint, tokenData: NFTTokenData) {
     super(masterPublicKey, random, value, tokenData);
   }

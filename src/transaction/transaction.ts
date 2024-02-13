@@ -9,10 +9,10 @@ import {
   randomHex,
 } from '../utils/bytes';
 import { AdaptID, NFTTokenData, OutputType, TokenData, TokenType } from '../models/formatted-types';
-import { UnshieldFlag } from '../models/transaction-constants';
+import { DecryptFlag } from '../models/transaction-constants';
 import { getNoteBlindingKeys, getSharedSymmetricKey } from '../utils/keys-utils';
-import { UnshieldNote } from '../note/unshield-note';
-import { TXO, UnshieldData } from '../models/txo-types';
+import { DecryptNote } from '../note/decrypt-note';
+import { TXO, DecryptData } from '../models/txo-types';
 import { Memo } from '../note/memo';
 import { Chain } from '../models/engine-types';
 import { TransactNote } from '../note/transact-note';
@@ -31,8 +31,8 @@ import {
 } from '../abi/typechain/RailgunSmartWallet';
 import { hashBoundParams } from './bound-params';
 import { getChainFullNetworkID } from '../chain/chain';
-import { UnshieldNoteERC20 } from '../note/erc20/unshield-note-erc20';
-import { UnshieldNoteNFT } from '../note/nft/unshield-note-nft';
+import { DecryptNoteERC20 } from '../note/erc20/decrypt-note-erc20';
+import { DecryptNoteNFT } from '../note/nft/decrypt-note-nft';
 import { getTokenDataHash } from '../note';
 import { calculateTotalSpend } from '../solutions/utxos';
 import { isDefined } from '../utils/is-defined';
@@ -44,9 +44,9 @@ class Transaction {
 
   private readonly tokenOutputs: TransactNote[] = [];
 
-  private unshieldNote: UnshieldNote = UnshieldNoteERC20.empty();
+  private decryptNote: DecryptNote = DecryptNoteERC20.empty();
 
-  private unshieldFlag: bigint = UnshieldFlag.NO_UNSHIELD;
+  private decryptFlag: bigint = DecryptFlag.NO_UNSHIELD;
 
   private readonly tokenData: TokenData;
 
@@ -86,24 +86,24 @@ class Transaction {
     this.adaptID = adaptID;
   }
 
-  addUnshieldData(unshieldData: UnshieldData, unshieldValue: bigint) {
-    if (this.unshieldFlag !== UnshieldFlag.NO_UNSHIELD) {
-      throw new Error('You may only call .unshield once for a given transaction.');
+  addDecryptData(decryptData: DecryptData, decryptValue: bigint) {
+    if (this.decryptFlag !== DecryptFlag.NO_UNSHIELD) {
+      throw new Error('You may only call .decrypt once for a given transaction.');
     }
 
-    const tokenHashUnshield = getTokenDataHash(unshieldData.tokenData);
-    if (tokenHashUnshield !== this.tokenHash) {
-      throw new Error('Unshield token does not match Transaction token.');
+    const tokenHashDecrypt = getTokenDataHash(decryptData.tokenData);
+    if (tokenHashDecrypt !== this.tokenHash) {
+      throw new Error('Decrypt token does not match Transaction token.');
     }
 
-    const { tokenData, allowOverride } = unshieldData;
+    const { tokenData, allowOverride } = decryptData;
     const { tokenAddress, tokenType, tokenSubID } = tokenData;
 
     switch (tokenType) {
       case TokenType.ERC20:
-        this.unshieldNote = new UnshieldNoteERC20(
-          unshieldData.toAddress,
-          unshieldValue,
+        this.decryptNote = new DecryptNoteERC20(
+          decryptData.toAddress,
+          decryptValue,
           tokenAddress,
           allowOverride,
         );
@@ -115,8 +115,8 @@ class Transaction {
           tokenType,
           tokenSubID,
         };
-        this.unshieldNote = new UnshieldNoteNFT(
-          unshieldData.toAddress,
+        this.decryptNote = new DecryptNoteNFT(
+          decryptData.toAddress,
           nftTokenData,
           allowOverride,
         );
@@ -124,12 +124,12 @@ class Transaction {
       }
     }
 
-    this.unshieldFlag =
-      isDefined(allowOverride) && allowOverride ? UnshieldFlag.OVERRIDE : UnshieldFlag.UNSHIELD;
+    this.decryptFlag =
+      isDefined(allowOverride) && allowOverride ? DecryptFlag.OVERRIDE : DecryptFlag.UNSHIELD;
   }
 
-  get unshieldValue() {
-    return isDefined(this.unshieldNote) ? this.unshieldNote.value : BigInt(0);
+  get decryptValue() {
+    return isDefined(this.decryptNote) ? this.decryptNote.value : BigInt(0);
   }
 
   /**
@@ -176,11 +176,11 @@ class Transaction {
       pathIndices.push(BigInt(utxo.position));
     }
 
-    const allOutputs: (TransactNote | UnshieldNote)[] = [...this.tokenOutputs];
+    const allOutputs: (TransactNote | DecryptNote)[] = [...this.tokenOutputs];
 
     const totalIn = calculateTotalSpend(utxos);
     const totalOutputNoteValues = TransactNote.calculateTotalNoteValues(this.tokenOutputs);
-    const totalOut = totalOutputNoteValues + this.unshieldValue;
+    const totalOut = totalOutputNoteValues + this.decryptValue;
 
     const change = totalIn - totalOut;
     if (change < 0n) {
@@ -205,11 +205,11 @@ class Transaction {
       );
     }
 
-    // Push unshield output if unshield is requested
-    const hasUnshield =
-      this.unshieldFlag !== UnshieldFlag.NO_UNSHIELD && isDefined(this.unshieldNote);
-    if (hasUnshield) {
-      allOutputs.push(this.unshieldNote);
+    // Push decrypt output if decrypt is requested
+    const hasDecrypt =
+      this.decryptFlag !== DecryptFlag.NO_UNSHIELD && isDefined(this.decryptNote);
+    if (hasDecrypt) {
+      allOutputs.push(this.decryptNote);
     }
 
     const onlyInternalOutputs = allOutputs.filter(
@@ -275,7 +275,7 @@ class Transaction {
     const boundParams: BoundParamsStruct = {
       treeNumber: this.spendingTree,
       minGasPrice: overallBatchMinGasPrice,
-      unshield: this.unshieldFlag,
+      decrypt: this.decryptFlag,
       chainID: hexlify(getChainFullNetworkID(this.chain), true),
       adaptContract: this.adaptID.contract,
       adaptParams: this.adaptID.parameters,
@@ -332,7 +332,7 @@ class Transaction {
       proof,
       publicInputs,
       boundParams,
-      this.unshieldNote.preImage,
+      this.decryptNote.preImage,
     );
   }
 
@@ -354,7 +354,7 @@ class Transaction {
       dummyProof,
       publicInputs,
       boundParams,
-      this.unshieldNote.preImage,
+      this.decryptNote.preImage,
     );
   }
 
@@ -373,7 +373,7 @@ class Transaction {
     proof: Proof,
     publicInputs: PublicInputs,
     boundParams: BoundParamsStruct,
-    unshieldPreimage: CommitmentPreimageStruct,
+    decryptPreimage: CommitmentPreimageStruct,
   ): TransactionStruct {
     return {
       proof: Prover.formatProof(proof),
@@ -381,10 +381,10 @@ class Transaction {
       nullifiers: publicInputs.nullifiers.map((n) => nToHex(n, ByteLength.UINT_256, true)),
       boundParams,
       commitments: publicInputs.commitmentsOut.map((n) => nToHex(n, ByteLength.UINT_256, true)),
-      unshieldPreimage: {
-        npk: formatToByteLength(unshieldPreimage.npk, ByteLength.UINT_256, true),
-        token: unshieldPreimage.token,
-        value: unshieldPreimage.value,
+      decryptPreimage: {
+        npk: formatToByteLength(decryptPreimage.npk, ByteLength.UINT_256, true),
+        token: decryptPreimage.token,
+        value: decryptPreimage.value,
       },
     };
   }

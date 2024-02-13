@@ -16,7 +16,7 @@ import {
   CommitmentType,
   LegacyGeneratedCommitment,
   Nullifier,
-  ShieldCommitment,
+  EncryptCommitment,
 } from './models/formatted-types';
 import {
   CommitmentEvent,
@@ -24,7 +24,7 @@ import {
   MerkletreeHistoryScanEventData,
   MerkletreeHistoryScanUpdateData,
   QuickSync,
-  UnshieldStoredEvent,
+  DecryptStoredEvent,
 } from './models/event-types';
 import { ViewOnlyWallet } from './wallet/view-only-wallet';
 import { AbstractWallet } from './wallet/abstract-wallet';
@@ -145,24 +145,24 @@ class RailgunEngine extends EventEmitter {
   }
 
   /**
-   * Handle new unshield events
+   * Handle new decrypt events
    * @param chain - chain type/id
-   * @param unshields - unshield events
+   * @param decrypts - decrypt events
    */
-  async unshieldListener(chain: Chain, unshields: UnshieldStoredEvent[]): Promise<void> {
+  async decryptListener(chain: Chain, decrypts: DecryptStoredEvent[]): Promise<void> {
     if (this.db.isClosed()) {
       return;
     }
-    if (!unshields.length) {
+    if (!decrypts.length) {
       return;
     }
-    EngineDebug.log(`engine.unshieldListener[${chain.type}:${chain.id}] ${unshields.length}`);
-    unshields.forEach((unshield) => {
+    EngineDebug.log(`engine.decryptListener[${chain.type}:${chain.id}] ${decrypts.length}`);
+    decrypts.forEach((decrypt) => {
       // eslint-disable-next-line no-param-reassign
-      unshield.txid = formatToByteLength(unshield.txid, ByteLength.UINT_256, false);
+      decrypt.txid = formatToByteLength(decrypt.txid, ByteLength.UINT_256, false);
     });
     const merkletree = this.getMerkletreeForChain(chain);
-    await merkletree.addUnshieldEvents(unshields);
+    await merkletree.addDecryptEvents(decrypts);
   }
 
   async getMostRecentValidCommitmentBlock(chain: Chain): Promise<Optional<number>> {
@@ -235,19 +235,19 @@ class RailgunEngine extends EventEmitter {
       this.emitScanUpdateEvent(chain, endProgress * 0.1); // 5% / 50%
 
       // Fetch events
-      const { commitmentEvents, unshieldEvents, nullifierEvents } = await this.quickSync(
+      const { commitmentEvents, decryptEvents, nullifierEvents } = await this.quickSync(
         chain,
         startScanningBlockQuickSync,
       );
 
       this.emitScanUpdateEvent(chain, endProgress * 0.2); // 10% / 50%
 
-      await this.unshieldListener(chain, unshieldEvents);
+      await this.decryptListener(chain, decryptEvents);
       await this.nullifierListener(chain, nullifierEvents);
 
       this.emitScanUpdateEvent(chain, endProgress * 0.24); // 12% / 50%
 
-      // Make sure commitments are scanned after Unshields and Nullifiers.
+      // Make sure commitments are scanned after Decrypts and Nullifiers.
       await Promise.all(
         commitmentEvents.map(async (commitmentEvent) => {
           const { treeNumber, startPosition, commitments } = commitmentEvent;
@@ -384,8 +384,8 @@ class RailgunEngine extends EventEmitter {
         async (nullifiers: Nullifier[]) => {
           await this.nullifierListener(chain, nullifiers);
         },
-        async (unshields: UnshieldStoredEvent[]) => {
-          await this.unshieldListener(chain, unshields);
+        async (decrypts: DecryptStoredEvent[]) => {
+          await this.decryptListener(chain, decrypts);
         },
         async (syncedBlock: number) => {
           const scannedBlocks = syncedBlock - startScanningBlockSlowScan;
@@ -439,9 +439,9 @@ class RailgunEngine extends EventEmitter {
     await Promise.all(this.allWallets().map((wallet) => wallet.clearScannedBalances(chain)));
   }
 
-  async clearSyncedUnshieldEvents(chain: Chain) {
+  async clearSyncedDecryptEvents(chain: Chain) {
     const merkletree = this.getMerkletreeForChain(chain);
-    await this.db.clearNamespace(merkletree.getUnshieldEventsDBPath());
+    await this.db.clearNamespace(merkletree.getDecryptEventsDBPath());
   }
 
   /**
@@ -467,7 +467,7 @@ class RailgunEngine extends EventEmitter {
     this.emitScanUpdateEvent(chain, 0.01); // 1%
     merkletree.isScanning = true; // Don't allow scans while removing leaves.
     await this.clearMerkletreeAndWallets(chain);
-    await this.clearSyncedUnshieldEvents(chain);
+    await this.clearSyncedDecryptEvents(chain);
     merkletree.isScanning = false; // Clear before calling scanHistory.
     await this.scanHistory(chain);
   }
@@ -567,13 +567,13 @@ class RailgunEngine extends EventEmitter {
       await this.nullifierListener(chain, nullifiers);
       await this.scanAllWallets(chain, undefined);
     };
-    const unshieldListener = async (unshields: UnshieldStoredEvent[]) => {
-      await this.unshieldListener(chain, unshields);
+    const decryptListener = async (decrypts: DecryptStoredEvent[]) => {
+      await this.decryptListener(chain, decrypts);
     };
     await ContractStore.railgunSmartWalletContracts[chain.type]?.[chain.id].setTreeUpdateListeners(
       eventsListener,
       nullifierListener,
-      unshieldListener,
+      decryptListener,
     );
   }
 
@@ -835,10 +835,10 @@ class RailgunEngine extends EventEmitter {
     return wallet;
   }
 
-  async getAllShieldCommitments(
+  async getAllEncryptCommitments(
     chain: Chain,
     startingBlock: number,
-  ): Promise<(ShieldCommitment | LegacyGeneratedCommitment)[]> {
+  ): Promise<(EncryptCommitment | LegacyGeneratedCommitment)[]> {
     const merkletree = this.getMerkletreeForChain(chain);
     const latestTree = await merkletree.latestTree();
 
@@ -851,7 +851,7 @@ class RailgunEngine extends EventEmitter {
       return [];
     }
 
-    const shieldCommitments: (ShieldCommitment | LegacyGeneratedCommitment)[] = [];
+    const encryptCommitments: (EncryptCommitment | LegacyGeneratedCommitment)[] = [];
 
     const startScanTree = treeInfo.tree;
 
@@ -875,14 +875,14 @@ class RailgunEngine extends EventEmitter {
         }
         if (
           leaf.commitmentType === CommitmentType.LegacyGeneratedCommitment ||
-          leaf.commitmentType === CommitmentType.ShieldCommitment
+          leaf.commitmentType === CommitmentType.EncryptCommitment
         ) {
-          shieldCommitments.push(leaf);
+          encryptCommitments.push(leaf);
         }
       });
     }
 
-    return shieldCommitments;
+    return encryptCommitments;
   }
 
   // Top-level exports:

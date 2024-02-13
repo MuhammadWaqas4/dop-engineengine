@@ -3,7 +3,7 @@ import {
   CommitmentCiphertext,
   CommitmentType,
   Nullifier,
-  ShieldCommitment,
+  EncryptCommitment,
   TransactCommitment,
 } from '../../models/formatted-types';
 import { ByteLength, formatToByteLength, nToHex } from '../../utils/bytes';
@@ -12,33 +12,33 @@ import {
   CommitmentEvent,
   EventsCommitmentListener,
   EventsNullifierListener,
-  EventsUnshieldListener,
-  UnshieldStoredEvent,
+  EventsDecryptListener,
+  DecryptStoredEvent,
 } from '../../models/event-types';
 import {
   CommitmentCiphertextStructOutput,
   CommitmentPreimageStructOutput,
   NullifiedEvent,
-  ShieldCiphertextStructOutput,
-  ShieldEvent,
+  EncryptCiphertextStructOutput,
+  EncryptEvent,
   TransactEvent,
-  UnshieldEvent,
+  DecryptEvent,
 } from '../../abi/typechain/RailgunSmartWallet';
 import { serializeTokenData, serializePreImage, getNoteHash } from '../../note/note-util';
-import { ShieldEvent as ShieldEvent_LegacyShield_PreMar23 } from '../../abi/typechain/RailgunSmartWallet_Legacy_PreMar23';
+import { EncryptEvent as EncryptEvent_LegacyEncrypt_PreMar23 } from '../../abi/typechain/RailgunSmartWallet_Legacy_PreMar23';
 import { ABIRailgunSmartWallet_Legacy_PreMar23 } from '../../abi/legacy/abi-legacy';
 
 /**
  * Parse event data for database
  */
-export function formatShieldCommitments(
+export function formatEncryptCommitments(
   transactionHash: string,
   preImages: CommitmentPreimageStructOutput[],
-  shieldCiphertext: ShieldCiphertextStructOutput[],
+  encryptCiphertext: EncryptCiphertextStructOutput[],
   blockNumber: number,
   fees: Optional<bigint[]>,
-): ShieldCommitment[] {
-  const shieldCommitments = preImages.map((commitmentPreImage, index) => {
+): EncryptCommitment[] {
+  const encryptCommitments = preImages.map((commitmentPreImage, index) => {
     const npk = formatToByteLength(commitmentPreImage.npk, ByteLength.UINT_256);
     const tokenData = serializeTokenData(
       commitmentPreImage.token.tokenAddress,
@@ -49,44 +49,44 @@ export function formatShieldCommitments(
     const preImage = serializePreImage(npk, tokenData, value);
     const noteHash = getNoteHash(npk, tokenData, value);
 
-    const commitment: ShieldCommitment = {
-      commitmentType: CommitmentType.ShieldCommitment,
+    const commitment: EncryptCommitment = {
+      commitmentType: CommitmentType.EncryptCommitment,
       hash: nToHex(noteHash, ByteLength.UINT_256),
       txid: formatToByteLength(transactionHash, ByteLength.UINT_256),
       timestamp: undefined,
       blockNumber,
       preImage,
-      encryptedBundle: shieldCiphertext[index].encryptedBundle,
-      shieldKey: shieldCiphertext[index].shieldKey,
+      encryptedBundle: encryptCiphertext[index].encryptedBundle,
+      encryptKey: encryptCiphertext[index].encryptKey,
       fee: fees && fees[index] ? fees[index].toString() : undefined,
     };
     return commitment;
   });
-  return shieldCommitments;
+  return encryptCommitments;
 }
 
-export function formatShieldEvent(
-  shieldEventArgs: ShieldEvent.OutputObject | ShieldEvent_LegacyShield_PreMar23.OutputObject,
+export function formatEncryptEvent(
+  encryptEventArgs: EncryptEvent.OutputObject | EncryptEvent_LegacyEncrypt_PreMar23.OutputObject,
   transactionHash: string,
   blockNumber: number,
   fees: Optional<bigint[]>,
 ): CommitmentEvent {
-  const { treeNumber, startPosition, commitments, shieldCiphertext } = shieldEventArgs;
+  const { treeNumber, startPosition, commitments, encryptCiphertext } = encryptEventArgs;
   if (
     treeNumber == null ||
     startPosition == null ||
     commitments == null ||
-    shieldCiphertext == null
+    encryptCiphertext == null
   ) {
-    const err = new Error('Invalid ShieldEventArgs');
+    const err = new Error('Invalid EncryptEventArgs');
     EngineDebug.error(err);
     throw err;
   }
 
-  const formattedCommitments = formatShieldCommitments(
+  const formattedCommitments = formatEncryptCommitments(
     transactionHash,
     commitments,
-    shieldCiphertext,
+    encryptCiphertext,
     blockNumber,
     fees,
   );
@@ -167,13 +167,13 @@ export function formatTransactEvent(
   };
 }
 
-export function formatUnshieldEvent(
-  unshieldEventArgs: UnshieldEvent.OutputObject,
+export function formatDecryptEvent(
+  decryptEventArgs: DecryptEvent.OutputObject,
   transactionHash: string,
   blockNumber: number,
   eventLogIndex: number,
-): UnshieldStoredEvent {
-  const { to, token, amount, fee } = unshieldEventArgs;
+): DecryptStoredEvent {
+  const { to, token, amount, fee } = decryptEventArgs;
   return {
     txid: formatToByteLength(transactionHash, ByteLength.UINT_256),
     timestamp: undefined,
@@ -188,52 +188,52 @@ export function formatUnshieldEvent(
   };
 }
 
-export async function processShieldEvents(
+export async function processEncryptEvents(
   eventsListener: EventsCommitmentListener,
-  logs: ShieldEvent.Log[],
+  logs: EncryptEvent.Log[],
 ): Promise<void> {
   const filtered = logs.filter((log) => log.args);
   if (logs.length !== filtered.length) {
-    throw new Error('Args required for Shield events');
+    throw new Error('Args required for Encrypt events');
   }
   await Promise.all(
     filtered.map(async (log) => {
       const { args, transactionHash, blockNumber } = log;
       const { fees } = args;
-      return eventsListener(formatShieldEvent(args, transactionHash, blockNumber, fees));
+      return eventsListener(formatEncryptEvent(args, transactionHash, blockNumber, fees));
     }),
   );
 }
 
-export async function processShieldEvents_LegacyShield_PreMar23(
+export async function processEncryptEvents_LegacyEncrypt_PreMar23(
   eventsListener: EventsCommitmentListener,
-  logs: ShieldEvent_LegacyShield_PreMar23.Log[],
+  logs: EncryptEvent_LegacyEncrypt_PreMar23.Log[],
 ): Promise<void> {
-  // NOTE: Legacy "Shield" event of the same name conflicts with the current ABI's Shield event.
-  // It seems that the first ABI to load, with "Shield" event, for a given contract address,
+  // NOTE: Legacy "Encrypt" event of the same name conflicts with the current ABI's Encrypt event.
+  // It seems that the first ABI to load, with "Encrypt" event, for a given contract address,
   // sets a cached version of the ABI interface.
-  // So, we need to custom-decode the legacy Shield event here.
+  // So, we need to custom-decode the legacy Encrypt event here.
 
   const iface = new Interface(
     ABIRailgunSmartWallet_Legacy_PreMar23.filter((fragment) => fragment.type === 'event'),
   );
   // eslint-disable-next-line no-restricted-syntax
   for (const log of logs) {
-    const args = iface.decodeEventLog('Shield', log.data);
+    const args = iface.decodeEventLog('Encrypt', log.data);
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     log.args = args as any;
   }
 
   const filtered = logs.filter((log) => log.args);
   if (logs.length !== filtered.length) {
-    throw new Error('Args required for Legacy Shield events');
+    throw new Error('Args required for Legacy Encrypt events');
   }
 
   await Promise.all(
     filtered.map(async (event) => {
       const { args, transactionHash, blockNumber } = event;
       const fees: Optional<bigint[]> = undefined;
-      return eventsListener(formatShieldEvent(args, transactionHash, blockNumber, fees));
+      return eventsListener(formatEncryptEvent(args, transactionHash, blockNumber, fees));
     }),
   );
 }
@@ -254,22 +254,22 @@ export async function processTransactEvents(
   );
 }
 
-export async function processUnshieldEvents(
-  eventsUnshieldListener: EventsUnshieldListener,
-  logs: UnshieldEvent.Log[],
+export async function processDecryptEvents(
+  eventsDecryptListener: EventsDecryptListener,
+  logs: DecryptEvent.Log[],
 ): Promise<void> {
-  const unshields: UnshieldStoredEvent[] = [];
+  const decrypts: DecryptStoredEvent[] = [];
 
   const filtered = logs.filter((log) => log.args);
   if (logs.length !== filtered.length) {
-    throw new Error('Args required for Unshield events');
+    throw new Error('Args required for Decrypt events');
   }
   filtered.forEach((log) => {
     const { args, transactionHash, blockNumber } = log;
-    unshields.push(formatUnshieldEvent(args, transactionHash, blockNumber, log.index));
+    decrypts.push(formatDecryptEvent(args, transactionHash, blockNumber, log.index));
   });
 
-  await eventsUnshieldListener(unshields);
+  await eventsDecryptListener(decrypts);
 }
 
 export function formatNullifiedEvents(

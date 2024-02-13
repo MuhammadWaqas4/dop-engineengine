@@ -17,7 +17,7 @@ import {
   sendTransactionWithLatestNonce,
   testArtifactsGetter,
 } from '../test/helper.test';
-import { ShieldNoteERC20 } from '../note/erc20/shield-note-erc20';
+import { EncryptNoteERC20 } from '../note/erc20/encrypt-note-erc20';
 import { MerkleTree } from '../merkletree/merkletree';
 import { ByteLength, formatToByteLength, hexToBigInt, hexToBytes, randomHex } from '../utils/bytes';
 import { RailgunSmartWalletContract } from '../contracts/railgun-smart-wallet/railgun-smart-wallet';
@@ -37,9 +37,9 @@ import { TransactNote } from '../note/transact-note';
 import { MEMO_SENDER_RANDOM_NULL, TOKEN_SUB_ID_NULL } from '../models/transaction-constants';
 import { getTokenDataERC20, getTokenDataHash, getTokenDataNFT } from '../note/note-util';
 import { TransactionBatch } from '../transaction/transaction-batch';
-import { UnshieldNoteNFT } from '../note/nft/unshield-note-nft';
+import { DecryptNoteNFT } from '../note/nft/decrypt-note-nft';
 import { ContractStore } from '../contracts/contract-store';
-import { mintNFTsID01ForTest, shieldNFTForTest } from '../test/shared-test.test';
+import { mintNFTsID01ForTest, encryptNFTForTest } from '../test/shared-test.test';
 import { createPollingJsonRpcProviderForListeners } from '../provider/polling-util';
 import { isDefined } from '../utils/is-defined';
 import { PollingJsonRpcProvider } from '../provider/polling-json-rpc-provider';
@@ -65,23 +65,23 @@ const nftAddress = config.contracts.testERC721;
 const testMnemonic = config.mnemonic;
 const testEncryptionKey = config.encryptionKey;
 
-const shieldTestTokens = async (railgunAddress: string, value: bigint) => {
+const encryptTestTokens = async (railgunAddress: string, value: bigint) => {
   const mpk = RailgunEngine.decodeAddress(railgunAddress).masterPublicKey;
   const receiverViewingPublicKey = wallet.getViewingKeyPair().pubkey;
   const random = randomHex(16);
-  const shield = new ShieldNoteERC20(mpk, random, value, await token.getAddress());
+  const encrypt = new EncryptNoteERC20(mpk, random, value, await token.getAddress());
 
-  const shieldPrivateKey = hexToBytes(randomHex(32));
-  const shieldInput = await shield.serialize(shieldPrivateKey, receiverViewingPublicKey);
+  const encryptPrivateKey = hexToBytes(randomHex(32));
+  const encryptInput = await encrypt.serialize(encryptPrivateKey, receiverViewingPublicKey);
 
-  // Create shield
-  const shieldTx = await railgunSmartWalletContract.generateShield([shieldInput]);
+  // Create encrypt
+  const encryptTx = await railgunSmartWalletContract.generateEncrypt([encryptInput]);
 
-  // Send shield on chain
-  const tx = await sendTransactionWithLatestNonce(ethersWallet, shieldTx);
+  // Send encrypt on chain
+  const tx = await sendTransactionWithLatestNonce(ethersWallet, encryptTx);
   await Promise.all([
     tx.wait(),
-    promiseTimeout(awaitScan(wallet, chain), 10000, 'Timed out scanning after test token shield'),
+    promiseTimeout(awaitScan(wallet, chain), 10000, 'Timed out scanning after test token encrypt'),
   ]);
 };
 
@@ -163,7 +163,7 @@ describe('RailgunEngine', function test() {
     );
   });
 
-  it('[HH] Should show balance after shield and rescan', async function run() {
+  it('[HH] Should show balance after encrypt and rescan', async function run() {
     if (!isDefined(process.env.RUN_HARDHAT_TESTS)) {
       this.skip();
       return;
@@ -208,7 +208,7 @@ describe('RailgunEngine', function test() {
     expect(balanceClear).to.equal(undefined);
   });
 
-  it('[HH] With a creation block number provided, should show balance after shield and rescan', async function run() {
+  it('[HH] With a creation block number provided, should show balance after encrypt and rescan', async function run() {
     if (!isDefined(process.env.RUN_HARDHAT_TESTS)) {
       this.skip();
       return;
@@ -268,7 +268,7 @@ describe('RailgunEngine', function test() {
     expect(walletDetailsCleared.treeScannedHeights.length).to.equal(0);
   });
 
-  it('[HH] Should shield, unshield and update balance, and pull formatted spend/receive transaction history', async function run() {
+  it('[HH] Should encrypt, decrypt and update balance, and pull formatted spend/receive transaction history', async function run() {
     if (!isDefined(process.env.RUN_HARDHAT_TESTS)) {
       this.skip();
       return;
@@ -278,7 +278,7 @@ describe('RailgunEngine', function test() {
     expect(initialBalance).to.equal(undefined);
 
     const address = wallet.getAddress(chain);
-    await shieldTestTokens(address, BigInt(110000) * DECIMALS_18);
+    await encryptTestTokens(address, BigInt(110000) * DECIMALS_18);
 
     const balance = await wallet.getBalance(chain, tokenAddress);
     expect(balance).to.equal(BigInt('109725000000000000000000'));
@@ -287,7 +287,7 @@ describe('RailgunEngine', function test() {
 
     // Create transaction
     const transactionBatch = new TransactionBatch(chain);
-    transactionBatch.addUnshieldData({
+    transactionBatch.addDecryptData({
       toAddress: ethersWallet.address,
       value: BigInt(300) * DECIMALS_18,
       tokenData,
@@ -323,7 +323,7 @@ describe('RailgunEngine', function test() {
       promiseTimeout(awaitMultipleScans(wallet2, chain, 2), 15000, 'Timed out wallet2 scan'),
     ]);
 
-    // BALANCE = shielded amount - 300(decimals) - 1
+    // BALANCE = encrypted amount - 300(decimals) - 1
     const newBalance = await wallet.getBalance(chain, tokenAddress);
     expect(newBalance).to.equal(109424999999999999999999n, 'Failed to receive expected balance');
 
@@ -341,7 +341,7 @@ describe('RailgunEngine', function test() {
     const completedTxid = await engine.getCompletedTxidFromNullifiers(chain, nullifiers);
     expect(completedTxid).to.equal(transactTx.hash);
 
-    // Check first output: Shield (receive only).
+    // Check first output: Encrypt (receive only).
     expect(history[0].receiveTokenAmounts).deep.eq([
       {
         tokenData: getTokenDataERC20(tokenAddress),
@@ -349,15 +349,15 @@ describe('RailgunEngine', function test() {
         amount: BigInt('109725000000000000000000'),
         memoText: undefined,
         senderAddress: undefined,
-        shieldFee: '275000000000000000000',
+        encryptFee: '275000000000000000000',
       },
     ]);
     expect(history[0].transferTokenAmounts).deep.eq([]);
     expect(history[0].relayerFeeTokenAmount).eq(undefined);
     expect(history[0].changeTokenAmounts).deep.eq([]);
-    expect(history[0].unshieldTokenAmounts).deep.eq([]);
+    expect(history[0].decryptTokenAmounts).deep.eq([]);
 
-    // Check second output: Unshield (relayer fee + change).
+    // Check second output: Decrypt (relayer fee + change).
     // NOTE: No receive token amounts should be logged by history.
     expect(history[1].receiveTokenAmounts).deep.eq(
       [],
@@ -389,7 +389,7 @@ describe('RailgunEngine', function test() {
         memoText: undefined,
       },
     ]);
-    expect(history[1].unshieldTokenAmounts).deep.eq([
+    expect(history[1].decryptTokenAmounts).deep.eq([
       {
         tokenData: getTokenDataERC20(tokenAddress),
         tokenHash: tokenFormatted,
@@ -397,7 +397,7 @@ describe('RailgunEngine', function test() {
         recipientAddress: ethersWallet.address,
         memoText: undefined,
         senderAddress: undefined,
-        unshieldFee: '750000000000000000',
+        decryptFee: '750000000000000000',
       },
     ]);
 
@@ -406,7 +406,7 @@ describe('RailgunEngine', function test() {
     expect(historyHighStartingBlock.length).to.equal(0);
   }).timeout(90000);
 
-  it('[HH] Should shield, max-unshield without relayer, and pull formatted spend/receive transaction history', async function run() {
+  it('[HH] Should encrypt, max-decrypt without relayer, and pull formatted spend/receive transaction history', async function run() {
     if (!isDefined(process.env.RUN_HARDHAT_TESTS)) {
       this.skip();
       return;
@@ -416,7 +416,7 @@ describe('RailgunEngine', function test() {
     expect(initialBalance).to.equal(undefined);
 
     const address = wallet.getAddress(chain);
-    await shieldTestTokens(address, BigInt(110000) * DECIMALS_18);
+    await encryptTestTokens(address, BigInt(110000) * DECIMALS_18);
 
     const balance = await wallet.getBalance(chain, tokenAddress);
     expect(balance).to.equal(BigInt('109725000000000000000000'));
@@ -425,7 +425,7 @@ describe('RailgunEngine', function test() {
 
     // Create transaction
     const transactionBatch = new TransactionBatch(chain);
-    transactionBatch.addUnshieldData({
+    transactionBatch.addDecryptData({
       toAddress: ethersWallet.address,
       value: BigInt('109725000000000000000000'),
       tokenData,
@@ -462,7 +462,7 @@ describe('RailgunEngine', function test() {
     const completedTxid = await engine.getCompletedTxidFromNullifiers(chain, nullifiers);
     expect(completedTxid).to.equal(transactTx.hash);
 
-    // Check first output: Shield (receive only).
+    // Check first output: Encrypt (receive only).
     expect(history[0].receiveTokenAmounts).deep.eq([
       {
         tokenData: getTokenDataERC20(tokenAddress),
@@ -470,15 +470,15 @@ describe('RailgunEngine', function test() {
         amount: BigInt('109725000000000000000000'),
         memoText: undefined,
         senderAddress: undefined,
-        shieldFee: '275000000000000000000',
+        encryptFee: '275000000000000000000',
       },
     ]);
     expect(history[0].transferTokenAmounts).deep.eq([]);
     expect(history[0].relayerFeeTokenAmount).eq(undefined);
     expect(history[0].changeTokenAmounts).deep.eq([]);
-    expect(history[0].unshieldTokenAmounts).deep.eq([]);
+    expect(history[0].decryptTokenAmounts).deep.eq([]);
 
-    // Check second output: Unshield (relayer fee + change).
+    // Check second output: Decrypt (relayer fee + change).
     // NOTE: No receive token amounts should be logged by history.
     expect(history[1].receiveTokenAmounts).deep.eq(
       [],
@@ -487,7 +487,7 @@ describe('RailgunEngine', function test() {
     expect(history[1].transferTokenAmounts).deep.eq([]);
     expect(history[1].relayerFeeTokenAmount).eq(undefined);
     expect(history[1].changeTokenAmounts).deep.eq([]); // No change output
-    expect(history[1].unshieldTokenAmounts).deep.eq([
+    expect(history[1].decryptTokenAmounts).deep.eq([
       {
         tokenData: getTokenDataERC20(tokenAddress),
         tokenHash: tokenFormatted,
@@ -495,12 +495,12 @@ describe('RailgunEngine', function test() {
         recipientAddress: ethersWallet.address,
         memoText: undefined,
         senderAddress: undefined,
-        unshieldFee: '274312500000000000000',
+        decryptFee: '274312500000000000000',
       },
     ]);
   }).timeout(90000);
 
-  it('[HH] Should shield, transfer and update balance, and pull formatted spend/receive transaction history', async function run() {
+  it('[HH] Should encrypt, transfer and update balance, and pull formatted spend/receive transaction history', async function run() {
     if (!isDefined(process.env.RUN_HARDHAT_TESTS)) {
       this.skip();
       return;
@@ -510,7 +510,7 @@ describe('RailgunEngine', function test() {
     expect(initialBalance).to.equal(undefined);
 
     const address = wallet.getAddress(chain);
-    await shieldTestTokens(address, BigInt(110000) * DECIMALS_18);
+    await encryptTestTokens(address, BigInt(110000) * DECIMALS_18);
 
     const balance = await wallet.getBalance(chain, tokenAddress);
     expect(balance).to.equal(BigInt('109725000000000000000000'));
@@ -570,7 +570,7 @@ describe('RailgunEngine', function test() {
       promiseTimeout(awaitMultipleScans(wallet2, chain, 2), 15000, 'Timed out wallet2 scan'),
     ]);
 
-    // BALANCE = shielded amount - 300(decimals) - 1
+    // BALANCE = encrypted amount - 300(decimals) - 1
     const newBalance = await wallet.getBalance(chain, tokenAddress);
     expect(newBalance).to.equal(109724999999999999999989n, 'Failed to receive expected balance');
 
@@ -583,7 +583,7 @@ describe('RailgunEngine', function test() {
 
     const tokenFormatted = formatToByteLength(tokenAddress, ByteLength.UINT_256, false);
 
-    // Check first output: Shield (receive only).
+    // Check first output: Encrypt (receive only).
     expect(history[0].receiveTokenAmounts).deep.eq([
       {
         tokenData: getTokenDataERC20(tokenAddress),
@@ -591,15 +591,15 @@ describe('RailgunEngine', function test() {
         amount: BigInt('109725000000000000000000'),
         memoText: undefined,
         senderAddress: undefined,
-        shieldFee: '275000000000000000000',
+        encryptFee: '275000000000000000000',
       },
     ]);
     expect(history[0].transferTokenAmounts).deep.eq([]);
     expect(history[0].relayerFeeTokenAmount).eq(undefined);
     expect(history[0].changeTokenAmounts).deep.eq([]);
-    expect(history[0].unshieldTokenAmounts).deep.eq([]);
+    expect(history[0].decryptTokenAmounts).deep.eq([]);
 
-    // Check second output: Unshield (relayer fee + change).
+    // Check second output: Decrypt (relayer fee + change).
     // NOTE: No receive token amounts should be logged by history.
     expect(history[1].receiveTokenAmounts).deep.eq(
       [],
@@ -645,7 +645,7 @@ describe('RailgunEngine', function test() {
         memoText: undefined,
       },
     ]);
-    expect(history[1].unshieldTokenAmounts).deep.eq([]);
+    expect(history[1].decryptTokenAmounts).deep.eq([]);
 
     const history2 = await wallet2.getTransactionHistory(chain, undefined);
     expect(history2.length).to.equal(1);
@@ -656,7 +656,7 @@ describe('RailgunEngine', function test() {
         amount: BigInt(10),
         memoText,
         senderAddress: wallet.getAddress(),
-        shieldFee: undefined,
+        encryptFee: undefined,
       },
       {
         tokenData: getTokenDataERC20(tokenAddress),
@@ -664,16 +664,16 @@ describe('RailgunEngine', function test() {
         amount: BigInt(1),
         memoText: relayerMemoText,
         senderAddress: undefined,
-        shieldFee: undefined,
+        encryptFee: undefined,
       },
     ]);
     expect(history2[0].transferTokenAmounts).deep.eq([]);
     expect(history2[0].relayerFeeTokenAmount).eq(undefined);
     expect(history2[0].changeTokenAmounts).deep.eq([]);
-    expect(history2[0].unshieldTokenAmounts).deep.eq([]);
+    expect(history2[0].decryptTokenAmounts).deep.eq([]);
   }).timeout(90000);
 
-  it('[HH] Should shield NFTs, transfer & unshield NFTs, and pull formatted spend/receive NFT history', async function run() {
+  it('[HH] Should encrypt NFTs, transfer & decrypt NFTs, and pull formatted spend/receive NFT history', async function run() {
     if (!isDefined(process.env.RUN_HARDHAT_TESTS)) {
       this.skip();
       return;
@@ -682,12 +682,12 @@ describe('RailgunEngine', function test() {
     // Mint NFTs
     await mintNFTsID01ForTest(nft, ethersWallet);
 
-    // Approve shields
+    // Approve encrypts
     const approval = await nft.setApprovalForAll(railgunSmartWalletContract.address, true);
     await approval.wait();
 
-    // Shield first NFT
-    await shieldNFTForTest(
+    // Encrypt first NFT
+    await encryptNFTForTest(
       wallet,
       ethersWallet,
       railgunSmartWalletContract,
@@ -706,7 +706,7 @@ describe('RailgunEngine', function test() {
     const tokenDataNFT1 = getTokenDataNFT(nftAddress, TokenType.ERC721, BigInt(1).toString());
     const tokenHashNFT1 = getTokenDataHash(tokenDataNFT1);
 
-    // Check first output: Shield (receive only).
+    // Check first output: Encrypt (receive only).
     expect(history[0].receiveTokenAmounts).deep.eq([
       {
         tokenData: tokenDataNFT1,
@@ -714,16 +714,16 @@ describe('RailgunEngine', function test() {
         amount: BigInt(1),
         memoText: undefined,
         senderAddress: undefined,
-        shieldFee: undefined,
+        encryptFee: undefined,
       },
     ]);
     expect(history[0].transferTokenAmounts).deep.eq([]);
     expect(history[0].relayerFeeTokenAmount).eq(undefined);
     expect(history[0].changeTokenAmounts).deep.eq([]);
-    expect(history[0].unshieldTokenAmounts).deep.eq([]);
+    expect(history[0].decryptTokenAmounts).deep.eq([]);
 
-    // Shield another NFT.
-    const shield2 = await shieldNFTForTest(
+    // Encrypt another NFT.
+    const encrypt2 = await encryptNFTForTest(
       wallet,
       ethersWallet,
       railgunSmartWalletContract,
@@ -733,8 +733,8 @@ describe('RailgunEngine', function test() {
       '0',
     );
 
-    // Shield tokens for Relayer Fee.
-    await shieldTestTokens(wallet.getAddress(), BigInt(110000) * DECIMALS_18);
+    // Encrypt tokens for Relayer Fee.
+    await encryptTestTokens(wallet.getAddress(), BigInt(110000) * DECIMALS_18);
 
     // Transfer NFT to another wallet.
 
@@ -757,12 +757,12 @@ describe('RailgunEngine', function test() {
       ),
     );
 
-    // Add output for NFT Unshield
-    const unshieldNote = new UnshieldNoteNFT(
+    // Add output for NFT Decrypt
+    const decryptNote = new DecryptNoteNFT(
       ethersWallet.address,
-      shield2.tokenData as NFTTokenData,
+      encrypt2.tokenData as NFTTokenData,
     );
-    transactionBatch.addUnshieldData(unshieldNote.unshieldData);
+    transactionBatch.addDecryptData(decryptNote.decryptData);
 
     const relayerMemoText = 'A short memo with only 32 chars.';
 
@@ -853,7 +853,7 @@ describe('RailgunEngine', function test() {
         memoText: undefined,
       },
     ]);
-    expect(historyAfterTransfer[3].unshieldTokenAmounts).deep.eq([
+    expect(historyAfterTransfer[3].decryptTokenAmounts).deep.eq([
       {
         tokenData: tokenDataNFT0,
         tokenHash: tokenHashNFT0,
@@ -861,7 +861,7 @@ describe('RailgunEngine', function test() {
         recipientAddress: ethersWallet.address,
         memoText: undefined,
         senderAddress: undefined,
-        unshieldFee: '0',
+        decryptFee: '0',
       },
     ]);
   }).timeout(90000);

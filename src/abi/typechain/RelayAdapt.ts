@@ -77,7 +77,7 @@ export type CommitmentCiphertextStructOutput = [
 export type BoundParamsStruct = {
   treeNumber: BigNumberish;
   minGasPrice: BigNumberish;
-  unshield: BigNumberish;
+  decrypt: BigNumberish;
   chainID: BigNumberish;
   adaptContract: AddressLike;
   adaptParams: BytesLike;
@@ -87,7 +87,7 @@ export type BoundParamsStruct = {
 export type BoundParamsStructOutput = [
   treeNumber: bigint,
   minGasPrice: bigint,
-  unshield: bigint,
+  decrypt: bigint,
   chainID: bigint,
   adaptContract: string,
   adaptParams: string,
@@ -95,7 +95,7 @@ export type BoundParamsStructOutput = [
 ] & {
   treeNumber: bigint;
   minGasPrice: bigint;
-  unshield: bigint;
+  decrypt: bigint;
   chainID: bigint;
   adaptContract: string;
   adaptParams: string;
@@ -132,7 +132,7 @@ export type TransactionStruct = {
   nullifiers: BytesLike[];
   commitments: BytesLike[];
   boundParams: BoundParamsStruct;
-  unshieldPreimage: CommitmentPreimageStruct;
+  decryptPreimage: CommitmentPreimageStruct;
 };
 
 export type TransactionStructOutput = [
@@ -141,37 +141,37 @@ export type TransactionStructOutput = [
   nullifiers: string[],
   commitments: string[],
   boundParams: BoundParamsStructOutput,
-  unshieldPreimage: CommitmentPreimageStructOutput
+  decryptPreimage: CommitmentPreimageStructOutput
 ] & {
   proof: SnarkProofStructOutput;
   merkleRoot: string;
   nullifiers: string[];
   commitments: string[];
   boundParams: BoundParamsStructOutput;
-  unshieldPreimage: CommitmentPreimageStructOutput;
+  decryptPreimage: CommitmentPreimageStructOutput;
 };
 
-export type ShieldCiphertextStruct = {
+export type EncryptCiphertextStruct = {
   encryptedBundle: [BytesLike, BytesLike, BytesLike];
-  shieldKey: BytesLike;
+  encryptKey: BytesLike;
 };
 
-export type ShieldCiphertextStructOutput = [
+export type EncryptCiphertextStructOutput = [
   encryptedBundle: [string, string, string],
-  shieldKey: string
-] & { encryptedBundle: [string, string, string]; shieldKey: string };
+  encryptKey: string
+] & { encryptedBundle: [string, string, string]; encryptKey: string };
 
-export type ShieldRequestStruct = {
+export type EncryptRequestStruct = {
   preimage: CommitmentPreimageStruct;
-  ciphertext: ShieldCiphertextStruct;
+  ciphertext: EncryptCiphertextStruct;
 };
 
-export type ShieldRequestStructOutput = [
+export type EncryptRequestStructOutput = [
   preimage: CommitmentPreimageStructOutput,
-  ciphertext: ShieldCiphertextStructOutput
+  ciphertext: EncryptCiphertextStructOutput
 ] & {
   preimage: CommitmentPreimageStructOutput;
-  ciphertext: ShieldCiphertextStructOutput;
+  ciphertext: EncryptCiphertextStructOutput;
 };
 
 export declare namespace RelayAdapt {
@@ -226,7 +226,7 @@ export interface RelayAdaptInterface extends Interface {
       | "multicall"
       | "railgun"
       | "relay"
-      | "shield"
+      | "encrypt"
       | "transfer"
       | "unwrapBase"
       | "wBase"
@@ -249,8 +249,8 @@ export interface RelayAdaptInterface extends Interface {
     values: [TransactionStruct[], RelayAdapt.ActionDataStruct]
   ): string;
   encodeFunctionData(
-    functionFragment: "shield",
-    values: [ShieldRequestStruct[]]
+    functionFragment: "encrypt",
+    values: [EncryptRequestStruct[]]
   ): string;
   encodeFunctionData(
     functionFragment: "transfer",
@@ -273,7 +273,7 @@ export interface RelayAdaptInterface extends Interface {
   decodeFunctionResult(functionFragment: "multicall", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "railgun", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "relay", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "shield", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "encrypt", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "transfer", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "unwrapBase", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "wBase", data: BytesLike): Result;
@@ -363,8 +363,8 @@ export interface RelayAdapt extends BaseContract {
     "payable"
   >;
 
-  shield: TypedContractMethod<
-    [_shieldRequests: ShieldRequestStruct[]],
+  encrypt: TypedContractMethod<
+    [_encryptRequests: EncryptRequestStruct[]],
     [void],
     "nonpayable"
   >;
@@ -420,9 +420,9 @@ export interface RelayAdapt extends BaseContract {
     "payable"
   >;
   getFunction(
-    nameOrSignature: "shield"
+    nameOrSignature: "encrypt"
   ): TypedContractMethod<
-    [_shieldRequests: ShieldRequestStruct[]],
+    [_encryptRequests: EncryptRequestStruct[]],
     [void],
     "nonpayable"
   >;

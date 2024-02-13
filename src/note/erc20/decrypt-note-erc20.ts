@@ -1,8 +1,8 @@
 import { ZERO_ADDRESS } from '../../utils/constants';
 import { getTokenDataERC20 } from '../note-util';
-import { UnshieldNote } from '../unshield-note';
+import { DecryptNote } from '../decrypt-note';
 
-export class UnshieldNoteERC20 extends UnshieldNote {
+export class DecryptNoteERC20 extends DecryptNote {
   constructor(
     toAddress: string,
     value: bigint,
@@ -13,11 +13,11 @@ export class UnshieldNoteERC20 extends UnshieldNote {
     super(toAddress, value, tokenData, allowOverride);
   }
 
-  static empty(): UnshieldNote {
+  static empty(): DecryptNote {
     const toAddress = ZERO_ADDRESS;
     const value = BigInt(0);
     const tokenAddress = ZERO_ADDRESS;
     const allowOverride = false;
-    return new UnshieldNoteERC20(toAddress, value, tokenAddress, allowOverride);
+    return new DecryptNoteERC20(toAddress, value, tokenAddress, allowOverride);
   }
 }

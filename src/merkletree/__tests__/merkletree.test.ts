@@ -7,7 +7,7 @@ import { Chain, ChainType } from '../../models/engine-types';
 import { Database } from '../../database/database';
 import { MerkleTree, MERKLE_ZERO_VALUE, MerkletreesMetadata } from '../merkletree';
 import { TOKEN_SUB_ID_NULL } from '../../models/transaction-constants';
-import { UnshieldStoredEvent } from '../../models';
+import { DecryptStoredEvent } from '../../models';
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
@@ -596,9 +596,9 @@ describe('MerkleTree', () => {
     expect(await merkletree.getStoredNullifierTxid('00')).to.equal('01');
   }).timeout(1000);
 
-  it('Should store and retrieve unshield events', async () => {
-    expect(await merkletree.getUnshieldEvents('0')).to.deep.equal([]);
-    const unshieldA1: UnshieldStoredEvent = {
+  it('Should store and retrieve decrypt events', async () => {
+    expect(await merkletree.getDecryptEvents('0')).to.deep.equal([]);
+    const decryptA1: DecryptStoredEvent = {
       txid: '0',
       toAddress: '123',
       tokenType: 1,
@@ -610,7 +610,7 @@ describe('MerkleTree', () => {
       eventLogIndex: 0,
       timestamp: undefined,
     };
-    const unshieldB1: UnshieldStoredEvent = {
+    const decryptB1: DecryptStoredEvent = {
       txid: '1',
       toAddress: '123',
       tokenType: 1,
@@ -622,7 +622,7 @@ describe('MerkleTree', () => {
       eventLogIndex: 0,
       timestamp: undefined,
     };
-    const unshieldB2: UnshieldStoredEvent = {
+    const decryptB2: DecryptStoredEvent = {
       txid: '1',
       toAddress: '123',
       tokenType: 1,
@@ -634,9 +634,9 @@ describe('MerkleTree', () => {
       eventLogIndex: 1,
       timestamp: undefined,
     };
-    await merkletree.addUnshieldEvents([unshieldA1, unshieldB1, unshieldB2]);
-    expect(await merkletree.getUnshieldEvents('0')).to.deep.equal([unshieldA1]);
-    expect(await merkletree.getUnshieldEvents('1')).to.deep.equal([unshieldB1, unshieldB2]);
+    await merkletree.addDecryptEvents([decryptA1, decryptB1, decryptB2]);
+    expect(await merkletree.getDecryptEvents('0')).to.deep.equal([decryptA1]);
+    expect(await merkletree.getDecryptEvents('1')).to.deep.equal([decryptB1, decryptB2]);
   });
 
   it('Should return latest tree', async () => {

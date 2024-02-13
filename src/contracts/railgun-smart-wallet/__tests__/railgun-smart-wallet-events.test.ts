@@ -23,7 +23,7 @@ let engine: RailgunEngine;
 let railgunSmartWalletContract: RailgunSmartWalletContract;
 
 const testHistoricalEventsForRange = async (startBlock: number, endBlock: number) => {
-  let foundShieldEvents = 0;
+  let foundEncryptEvents = 0;
   let foundTransact = 0;
   let foundNullifiers = 0;
   await railgunSmartWalletContract.getHistoricalEvents(
@@ -47,8 +47,8 @@ const testHistoricalEventsForRange = async (startBlock: number, endBlock: number
       const { commitmentType } = event.commitments[0];
       switch (commitmentType) {
         case CommitmentType.LegacyGeneratedCommitment:
-        case CommitmentType.ShieldCommitment:
-          foundShieldEvents += 1;
+        case CommitmentType.EncryptCommitment:
+          foundEncryptEvents += 1;
           break;
         case CommitmentType.LegacyEncryptedCommitment:
         case CommitmentType.TransactCommitment:
@@ -68,7 +68,7 @@ const testHistoricalEventsForRange = async (startBlock: number, endBlock: number
     async () => {},
     async () => {},
   );
-  expect(foundShieldEvents).to.be.greaterThanOrEqual(1);
+  expect(foundEncryptEvents).to.be.greaterThanOrEqual(1);
   expect(foundTransact).to.be.greaterThanOrEqual(1);
   expect(foundNullifiers).to.be.greaterThanOrEqual(1);
 };

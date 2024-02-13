@@ -24,11 +24,11 @@ export type SpendingSolutionGroup = {
   utxos: TXO[];
   spendingTree: number;
   tokenOutputs: TransactNote[];
-  unshieldValue: bigint;
+  decryptValue: bigint;
   tokenData: TokenData;
 };
 
-export type UnshieldData = {
+export type DecryptData = {
   toAddress: string;
   value: bigint;
   tokenData: TokenData;

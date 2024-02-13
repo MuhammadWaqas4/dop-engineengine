@@ -3,7 +3,7 @@ import { Prover, ProverProgressCallback } from '../prover/prover';
 import { HashZero } from '../utils/bytes';
 import { findExactSolutionsOverTargetValue } from '../solutions/simple-solutions';
 import { Transaction } from './transaction';
-import { SpendingSolutionGroup, TXO, UnshieldData } from '../models/txo-types';
+import { SpendingSolutionGroup, TXO, DecryptData } from '../models/txo-types';
 import { AdaptID, OutputType, TokenData, TokenType } from '../models/formatted-types';
 import { createSpendingSolutionsForValue } from '../solutions/complex-solutions';
 import { calculateTotalSpend } from '../solutions/utxos';
@@ -34,7 +34,7 @@ export class TransactionBatch {
 
   private outputs: TransactNote[] = [];
 
-  private unshieldDataMap: { [tokenHash: string]: UnshieldData } = {};
+  private decryptDataMap: { [tokenHash: string]: DecryptData } = {};
 
   private overallBatchMinGasPrice: bigint;
 
@@ -55,26 +55,26 @@ export class TransactionBatch {
     this.outputs = [];
   }
 
-  addUnshieldData(unshieldData: UnshieldData) {
-    const tokenHash = getTokenDataHash(unshieldData.tokenData);
-    if (isDefined(this.unshieldDataMap[tokenHash])) {
+  addDecryptData(decryptData: DecryptData) {
+    const tokenHash = getTokenDataHash(decryptData.tokenData);
+    if (isDefined(this.decryptDataMap[tokenHash])) {
       throw new Error(
-        'You may only call .addUnshieldData once per token for a given TransactionBatch.',
+        'You may only call .addDecryptData once per token for a given TransactionBatch.',
       );
     }
-    if (unshieldData.value === 0n) {
-      throw new Error('Unshield value must be greater than 0.');
+    if (decryptData.value === 0n) {
+      throw new Error('Decrypt value must be greater than 0.');
     }
-    this.unshieldDataMap[tokenHash] = unshieldData;
+    this.decryptDataMap[tokenHash] = decryptData;
   }
 
-  resetUnshieldData() {
-    this.unshieldDataMap = {};
+  resetDecryptData() {
+    this.decryptDataMap = {};
   }
 
-  private unshieldTotal(tokenHash: string) {
-    return isDefined(this.unshieldDataMap[tokenHash])
-      ? this.unshieldDataMap[tokenHash].value
+  private decryptTotal(tokenHash: string) {
+    return isDefined(this.decryptDataMap[tokenHash])
+      ? this.decryptDataMap[tokenHash].value
       : BigInt(0);
   }
 
@@ -86,10 +86,10 @@ export class TransactionBatch {
     const tokenHashes: string[] = [];
     const tokenDatas: TokenData[] = [];
     const outputTokenDatas: TokenData[] = this.outputs.map((output) => output.tokenData);
-    const unshieldTokenDatas: TokenData[] = Object.values(this.unshieldDataMap).map(
+    const decryptTokenDatas: TokenData[] = Object.values(this.decryptDataMap).map(
       (output) => output.tokenData,
     );
-    [...outputTokenDatas, ...unshieldTokenDatas].forEach((tokenData) => {
+    [...outputTokenDatas, ...decryptTokenDatas].forEach((tokenData) => {
       const tokenHash = getTokenDataHash(tokenData);
       if (!tokenHashes.includes(tokenHash)) {
         tokenHashes.push(tokenHash);
@@ -122,7 +122,7 @@ export class TransactionBatch {
     const outputTotal = TransactNote.calculateTotalNoteValues(tokenOutputs);
 
     // Calculate total required to be supplied by UTXOs
-    const totalRequired = outputTotal + this.unshieldTotal(tokenHash);
+    const totalRequired = outputTotal + this.decryptTotal(tokenHash);
 
     const treeSortedBalances = await wallet.balancesByTreeForToken(this.chain, tokenHash);
     const tokenBalance = AbstractWallet.tokenBalanceAcrossAllTrees(treeSortedBalances);
@@ -188,12 +188,12 @@ export class TransactionBatch {
         throw new Error('Could not find UTXOs to satisfy required amount.');
       }
 
-      const unshieldValue = this.unshieldTotal(tokenHash);
+      const decryptValue = this.decryptTotal(tokenHash);
 
       const spendingSolutionGroup: SpendingSolutionGroup = {
         utxos,
         spendingTree,
-        unshieldValue,
+        decryptValue,
         tokenOutputs,
         tokenData,
       };
@@ -253,7 +253,7 @@ export class TransactionBatch {
         treeSortedBalances,
         remainingTokenOutputs,
         excludedUTXOIDPositions,
-        false, // isUnshield
+        false, // isDecrypt
       );
       if (!transactSpendingSolutionGroups.length) {
         break;
@@ -266,23 +266,23 @@ export class TransactionBatch {
     }
 
     const tokenHash = getTokenDataHash(tokenData);
-    if (isDefined(this.unshieldDataMap[tokenHash])) {
-      const value = this.unshieldTotal(tokenHash);
-      const nullUnshieldNote = TransactNote.createNullUnshieldNote(tokenData, value);
-      const unshieldTokenOutputs: TransactNote[] = [nullUnshieldNote];
+    if (isDefined(this.decryptDataMap[tokenHash])) {
+      const value = this.decryptTotal(tokenHash);
+      const nullDecryptNote = TransactNote.createNullDecryptNote(tokenData, value);
+      const decryptTokenOutputs: TransactNote[] = [nullDecryptNote];
 
-      const unshieldSpendingSolutionGroups = createSpendingSolutionsForValue(
+      const decryptSpendingSolutionGroups = createSpendingSolutionsForValue(
         treeSortedBalances,
-        unshieldTokenOutputs,
+        decryptTokenOutputs,
         excludedUTXOIDPositions,
-        true, // isUnshield
+        true, // isDecrypt
       );
 
-      if (!unshieldSpendingSolutionGroups.length) {
-        throw new Error('Could not find enough UTXOs to satisfy unshield.');
+      if (!decryptSpendingSolutionGroups.length) {
+        throw new Error('Could not find enough UTXOs to satisfy decrypt.');
       }
 
-      spendingSolutionGroups.push(...unshieldSpendingSolutionGroups);
+      spendingSolutionGroups.push(...decryptSpendingSolutionGroups);
     }
 
     return spendingSolutionGroups;
@@ -369,7 +369,7 @@ export class TransactionBatch {
     EngineDebug.log(
       `Dummy spending solution groups - circuits ${spendingSolutionGroupsSummaries.join(
         ', ',
-      )} (excluding unshields)`,
+      )} (excluding decrypts)`,
     );
     EngineDebug.log(
       stringifySafe(
@@ -411,7 +411,7 @@ export class TransactionBatch {
   generateTransactionForSpendingSolutionGroup(
     spendingSolutionGroup: SpendingSolutionGroup,
   ): Transaction {
-    const { spendingTree, utxos, tokenOutputs, unshieldValue, tokenData } = spendingSolutionGroup;
+    const { spendingTree, utxos, tokenOutputs, decryptValue, tokenData } = spendingSolutionGroup;
     const transaction = new Transaction(
       this.chain,
       tokenData,
@@ -421,8 +421,8 @@ export class TransactionBatch {
       this.adaptID,
     );
     const tokenHash = getTokenDataHash(tokenData);
-    if (isDefined(this.unshieldDataMap[tokenHash]) && unshieldValue > 0) {
-      transaction.addUnshieldData(this.unshieldDataMap[tokenHash], unshieldValue);
+    if (isDefined(this.decryptDataMap[tokenHash]) && decryptValue > 0) {
+      transaction.addDecryptData(this.decryptDataMap[tokenHash], decryptValue);
     }
     return transaction;
   }

@@ -20,7 +20,7 @@ import { Chain } from '../models/engine-types';
 import { getChainFullNetworkID } from '../chain/chain';
 import { SNARK_PRIME } from '../utils/constants';
 import { keccak256 } from '../utils/hash';
-import { UnshieldStoredEvent } from '../models';
+import { DecryptStoredEvent } from '../models';
 import { isDefined } from '../utils/is-defined';
 
 // eslint-disable-next-line no-unused-vars
@@ -237,11 +237,11 @@ class MerkleTree {
   }
 
   /**
-   * Construct DB path from unshield transaction
-   * @param txid - unshield txid to get path for
+   * Construct DB path from decrypt transaction
+   * @param txid - decrypt txid to get path for
    * @returns database path
    */
-  getUnshieldEventsDBPath(txid?: string, eventLogIndex?: number): string[] {
+  getDecryptEventsDBPath(txid?: string, eventLogIndex?: number): string[] {
     const path = [
       ...this.getChainDBPrefix(),
       hexlify(new BN(0).notn(32).subn(2)), // 2^32-3
@@ -292,15 +292,15 @@ class MerkleTree {
   }
 
   /**
-   * Adds unshield event to database
-   * @param unshields - unshield events to add to db
+   * Adds decrypt event to database
+   * @param decrypts - decrypt events to add to db
    */
-  async addUnshieldEvents(unshields: UnshieldStoredEvent[]): Promise<void> {
+  async addDecryptEvents(decrypts: DecryptStoredEvent[]): Promise<void> {
     // Build write batch for nullifiers
-    const writeBatch: PutBatch[] = unshields.map((unshield) => ({
+    const writeBatch: PutBatch[] = decrypts.map((decrypt) => ({
       type: 'put',
-      key: this.getUnshieldEventsDBPath(unshield.txid, unshield.eventLogIndex).join(':'),
-      value: unshield,
+      key: this.getDecryptEventsDBPath(decrypt.txid, decrypt.eventLogIndex).join(':'),
+      value: decrypt,
     }));
 
     // Write to DB
@@ -329,20 +329,20 @@ class MerkleTree {
   }
 
   /**
-   * Gets Unshield event
+   * Gets Decrypt event
    * @param txid - txid of commitment
    * @returns commitment
    */
-  async getUnshieldEvents(txid: string): Promise<UnshieldStoredEvent[]> {
-    const namespace = this.getUnshieldEventsDBPath(txid);
+  async getDecryptEvents(txid: string): Promise<DecryptStoredEvent[]> {
+    const namespace = this.getDecryptEventsDBPath(txid);
     const keys: string[] = await this.db.getNamespaceKeys(namespace);
     const keySplits = keys.map((key) => key.split(':')).filter((keySplit) => keySplit.length === 5);
 
     return Promise.all(
       keySplits.map(async (keySplit) => {
-        const unshieldEvent = (await this.db.get(keySplit, 'json')) as UnshieldStoredEvent;
-        unshieldEvent.timestamp = unshieldEvent.timestamp ?? undefined;
-        return unshieldEvent;
+        const decryptEvent = (await this.db.get(keySplit, 'json')) as DecryptStoredEvent;
+        decryptEvent.timestamp = decryptEvent.timestamp ?? undefined;
+        return decryptEvent;
       }),
     );
   }

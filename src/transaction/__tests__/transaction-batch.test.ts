@@ -47,7 +47,7 @@ const random = randomHex(16);
 
 let makeNote: (value?: bigint) => Promise<TransactNote>;
 
-const shieldLeaf = (txid: string): Commitment => ({
+const encryptLeaf = (txid: string): Commitment => ({
   commitmentType: CommitmentType.LegacyGeneratedCommitment,
   txid,
   timestamp: undefined,
@@ -64,7 +64,7 @@ const shieldLeaf = (txid: string): Commitment => ({
   blockNumber: 0,
 });
 
-const shieldValue = 9975062344139650872817n;
+const encryptValue = 9975062344139650872817n;
 
 describe('Transaction/Transaction Batch', function run() {
   this.timeout(120000);
@@ -128,13 +128,13 @@ describe('Transaction/Transaction Batch', function run() {
       );
     };
     merkletree.rootValidator = () => Promise.resolve(true);
-    await merkletree.queueLeaves(0, 0, [shieldLeaf('a')]);
+    await merkletree.queueLeaves(0, 0, [encryptLeaf('a')]);
     await merkletree.queueLeaves(1, 0, [
-      shieldLeaf('b'),
-      shieldLeaf('c'),
-      shieldLeaf('d'),
-      shieldLeaf('e'),
-      shieldLeaf('f'),
+      encryptLeaf('b'),
+      encryptLeaf('c'),
+      encryptLeaf('d'),
+      encryptLeaf('e'),
+      encryptLeaf('f'),
     ]);
     await merkletree.updateTrees();
     await wallet.scanBalances(chain, undefined);
@@ -151,14 +151,14 @@ describe('Transaction/Transaction Batch', function run() {
       return;
     }
 
-    transactionBatch.addOutput(await makeNote(shieldValue * 6n));
+    transactionBatch.addOutput(await makeNote(encryptValue * 6n));
     const txs = await transactionBatch.generateDummyTransactions(prover, wallet, testEncryptionKey);
     expect(txs.length).to.equal(2);
     expect(txs.map((tx) => tx.nullifiers.length)).to.deep.equal([1, 5]);
     expect(txs.map((tx) => tx.commitments.length)).to.deep.equal([1, 1]);
 
     transactionBatch.resetOutputs();
-    transactionBatch.addOutput(await makeNote(shieldValue * 6n));
+    transactionBatch.addOutput(await makeNote(encryptValue * 6n));
     transactionBatch.addOutput(await makeNote(1n));
     await expect(
       transactionBatch.generateDummyTransactions(prover, wallet, testEncryptionKey),
@@ -167,12 +167,12 @@ describe('Transaction/Transaction Batch', function run() {
     );
 
     transactionBatch.resetOutputs();
-    transactionBatch.addOutput(await makeNote(shieldValue));
-    transactionBatch.addOutput(await makeNote(shieldValue));
-    transactionBatch.addOutput(await makeNote(shieldValue));
-    transactionBatch.addOutput(await makeNote(shieldValue));
-    transactionBatch.addOutput(await makeNote(shieldValue));
-    transactionBatch.addOutput(await makeNote(shieldValue));
+    transactionBatch.addOutput(await makeNote(encryptValue));
+    transactionBatch.addOutput(await makeNote(encryptValue));
+    transactionBatch.addOutput(await makeNote(encryptValue));
+    transactionBatch.addOutput(await makeNote(encryptValue));
+    transactionBatch.addOutput(await makeNote(encryptValue));
+    transactionBatch.addOutput(await makeNote(encryptValue));
     const txs2 = await transactionBatch.generateDummyTransactions(
       prover,
       wallet,
@@ -183,10 +183,10 @@ describe('Transaction/Transaction Batch', function run() {
     expect(txs2.map((tx) => tx.commitments.length)).to.deep.equal([1, 1, 1, 1, 1, 1]);
 
     transactionBatch.resetOutputs();
-    transactionBatch.addOutput(await makeNote(shieldValue + 1n));
-    transactionBatch.addOutput(await makeNote(shieldValue + 1n));
-    transactionBatch.addOutput(await makeNote(shieldValue + 1n));
-    transactionBatch.addOutput(await makeNote(shieldValue + 1n));
+    transactionBatch.addOutput(await makeNote(encryptValue + 1n));
+    transactionBatch.addOutput(await makeNote(encryptValue + 1n));
+    transactionBatch.addOutput(await makeNote(encryptValue + 1n));
+    transactionBatch.addOutput(await makeNote(encryptValue + 1n));
     const txs3 = await transactionBatch.generateDummyTransactions(
       prover,
       wallet,
@@ -195,13 +195,13 @@ describe('Transaction/Transaction Batch', function run() {
     expect(txs3.length).to.equal(1);
     expect(txs3.map((tx) => tx.nullifiers.length)).to.deep.equal([5]);
     expect(txs3.map((tx) => tx.commitments.length)).to.deep.equal([5]);
-    expect(txs3.map((tx) => tx.unshieldPreimage.value)).to.deep.equal([0n]);
+    expect(txs3.map((tx) => tx.decryptPreimage.value)).to.deep.equal([0n]);
 
     // Ex: large number of output receivers per circuit
     // The solutions should use change from one note for the next output receiver... and so on.
     transactionBatch.resetOutputs();
-    transactionBatch.resetUnshieldData();
-    transactionBatch.addOutput(await makeNote(5n * shieldValue + 1n)); // Should use all 6 notes, with a large 'change' output.
+    transactionBatch.resetDecryptData();
+    transactionBatch.addOutput(await makeNote(5n * encryptValue + 1n)); // Should use all 6 notes, with a large 'change' output.
     transactionBatch.addOutput(await makeNote(1n)); // Can't add another note, because all are used up.
     const txs4 = await transactionBatch.generateDummyTransactions(
       prover,
@@ -210,17 +210,17 @@ describe('Transaction/Transaction Batch', function run() {
     );
     expect(txs4.map((tx) => tx.nullifiers.length)).to.deep.equal([1, 5]);
     expect(txs4.map((tx) => tx.commitments.length)).to.deep.equal([1, 3]);
-    expect(txs4.map((tx) => tx.unshieldPreimage.value)).to.deep.equal([0n, 0n]);
+    expect(txs4.map((tx) => tx.decryptPreimage.value)).to.deep.equal([0n, 0n]);
   });
 
-  it('[HH] Should validate transaction batch outputs w/ unshields', async function test() {
+  it('[HH] Should validate transaction batch outputs w/ decrypts', async function test() {
     if (!isDefined(process.env.RUN_HARDHAT_TESTS)) {
       this.skip();
       return;
     }
 
     transactionBatch.resetOutputs();
-    transactionBatch.resetUnshieldData();
+    transactionBatch.resetDecryptData();
     transactionBatch.addOutput(await makeNote(0n));
     await expect(
       transactionBatch.generateTransactions(prover, wallet, testEncryptionKey, () => {}),
@@ -238,13 +238,13 @@ describe('Transaction/Transaction Batch', function run() {
     // expect(txs0.length).to.equal(1);
     // expect(txs0.map((tx) => tx.nullifiers.length)).to.deep.equal([1]);
     // expect(txs0.map((tx) => tx.commitments.length)).to.deep.equal([1]);
-    // expect(txs0.map((tx) => tx.unshieldPreimage.value)).to.deep.equal([0n]);
+    // expect(txs0.map((tx) => tx.decryptPreimage.value)).to.deep.equal([0n]);
 
     transactionBatch.resetOutputs();
-    transactionBatch.resetUnshieldData();
-    transactionBatch.addUnshieldData({
+    transactionBatch.resetDecryptData();
+    transactionBatch.addDecryptData({
       toAddress: ethersWallet.address,
-      value: shieldValue * 6n,
+      value: encryptValue * 6n,
       tokenData,
     });
     const txs1 = await transactionBatch.generateDummyTransactions(
@@ -255,17 +255,17 @@ describe('Transaction/Transaction Batch', function run() {
     expect(txs1.length).to.equal(2);
     expect(txs1.map((tx) => tx.nullifiers.length)).to.deep.equal([1, 5]);
     expect(txs1.map((tx) => tx.commitments.length)).to.deep.equal([1, 1]);
-    expect(txs1.map((tx) => tx.unshieldPreimage.value)).to.deep.equal([
-      shieldValue,
-      5n * shieldValue,
+    expect(txs1.map((tx) => tx.decryptPreimage.value)).to.deep.equal([
+      encryptValue,
+      5n * encryptValue,
     ]);
 
     transactionBatch.resetOutputs();
-    transactionBatch.resetUnshieldData();
-    transactionBatch.addOutput(await makeNote(shieldValue * 6n));
-    transactionBatch.addUnshieldData({
+    transactionBatch.resetDecryptData();
+    transactionBatch.addOutput(await makeNote(encryptValue * 6n));
+    transactionBatch.addDecryptData({
       toAddress: ethersWallet.address,
-      value: shieldValue * 1n,
+      value: encryptValue * 1n,
       tokenData,
     });
     await expect(
@@ -275,15 +275,15 @@ describe('Transaction/Transaction Batch', function run() {
     );
 
     transactionBatch.resetOutputs();
-    transactionBatch.resetUnshieldData();
-    transactionBatch.addOutput(await makeNote(shieldValue));
-    transactionBatch.addOutput(await makeNote(shieldValue));
-    transactionBatch.addOutput(await makeNote(shieldValue));
-    transactionBatch.addOutput(await makeNote(shieldValue));
-    transactionBatch.addOutput(await makeNote(shieldValue));
-    transactionBatch.addUnshieldData({
+    transactionBatch.resetDecryptData();
+    transactionBatch.addOutput(await makeNote(encryptValue));
+    transactionBatch.addOutput(await makeNote(encryptValue));
+    transactionBatch.addOutput(await makeNote(encryptValue));
+    transactionBatch.addOutput(await makeNote(encryptValue));
+    transactionBatch.addOutput(await makeNote(encryptValue));
+    transactionBatch.addDecryptData({
       toAddress: ethersWallet.address,
-      value: shieldValue,
+      value: encryptValue,
       tokenData,
     });
     const txs2 = await transactionBatch.generateDummyTransactions(
@@ -294,23 +294,23 @@ describe('Transaction/Transaction Batch', function run() {
     expect(txs2.length).to.equal(6);
     expect(txs2.map((tx) => tx.nullifiers.length)).to.deep.equal([1, 1, 1, 1, 1, 1]);
     expect(txs2.map((tx) => tx.commitments.length)).to.deep.equal([1, 1, 1, 1, 1, 1]);
-    expect(txs2.map((tx) => tx.unshieldPreimage.value)).to.deep.equal([
+    expect(txs2.map((tx) => tx.decryptPreimage.value)).to.deep.equal([
       0n,
       0n,
       0n,
       0n,
       0n,
-      shieldValue,
+      encryptValue,
     ]);
 
-    await merkletree.queueLeaves(1, 0, [shieldLeaf('g'), shieldLeaf('h')]);
+    await merkletree.queueLeaves(1, 0, [encryptLeaf('g'), encryptLeaf('h')]);
     await merkletree.updateTrees();
     transactionBatch.resetOutputs();
-    transactionBatch.resetUnshieldData();
+    transactionBatch.resetDecryptData();
     transactionBatch.addOutput(await makeNote(0n));
-    transactionBatch.addUnshieldData({
+    transactionBatch.addDecryptData({
       toAddress: ethersWallet.address,
-      value: shieldValue * 5n,
+      value: encryptValue * 5n,
       tokenData,
     });
     const txs3 = await transactionBatch.generateDummyTransactions(
@@ -321,16 +321,16 @@ describe('Transaction/Transaction Batch', function run() {
     expect(txs3.length).to.equal(1);
     expect(txs3.map((tx) => tx.nullifiers.length)).to.deep.equal([5]);
     expect(txs3.map((tx) => tx.commitments.length)).to.deep.equal([2]);
-    expect(txs3.map((tx) => tx.unshieldPreimage.value)).to.deep.equal([5n * shieldValue]);
+    expect(txs3.map((tx) => tx.decryptPreimage.value)).to.deep.equal([5n * encryptValue]);
 
     transactionBatch.resetOutputs();
-    transactionBatch.resetUnshieldData();
-    transactionBatch.addOutput(await makeNote(shieldValue + 1n));
-    transactionBatch.addOutput(await makeNote(shieldValue + 1n));
-    transactionBatch.addOutput(await makeNote(shieldValue + 1n));
-    transactionBatch.addUnshieldData({
+    transactionBatch.resetDecryptData();
+    transactionBatch.addOutput(await makeNote(encryptValue + 1n));
+    transactionBatch.addOutput(await makeNote(encryptValue + 1n));
+    transactionBatch.addOutput(await makeNote(encryptValue + 1n));
+    transactionBatch.addDecryptData({
       toAddress: ethersWallet.address,
-      value: shieldValue + 1n,
+      value: encryptValue + 1n,
       tokenData,
     });
     const txs4 = await transactionBatch.generateDummyTransactions(
@@ -341,7 +341,7 @@ describe('Transaction/Transaction Batch', function run() {
     expect(txs4.length).to.equal(1);
     expect(txs4.map((tx) => tx.nullifiers.length)).to.deep.equal([5]);
     expect(txs4.map((tx) => tx.commitments.length)).to.deep.equal([5]);
-    expect(txs4.map((tx) => tx.unshieldPreimage.value)).to.deep.equal([shieldValue + 1n]);
+    expect(txs4.map((tx) => tx.decryptPreimage.value)).to.deep.equal([encryptValue + 1n]);
   });
 
   this.afterAll(async () => {

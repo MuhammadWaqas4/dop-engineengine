@@ -1,10 +1,10 @@
 import { CommitmentPreimageStruct } from '../abi/typechain/RailgunSmartWallet';
-import { UnshieldData } from '../models';
+import { DecryptData } from '../models';
 import { TokenData } from '../models/formatted-types';
 import { ByteLength, nToHex } from '../utils/bytes';
 import { assertValidNoteToken, getNoteHash, serializePreImage } from './note-util';
 
-export abstract class UnshieldNote {
+export abstract class DecryptNote {
   readonly toAddress: string;
 
   readonly value: bigint;
@@ -18,7 +18,7 @@ export abstract class UnshieldNote {
   /**
    * Create Note object
    *
-   * @param toAddress - address to unshield to
+   * @param toAddress - address to decrypt to
    * @param value - note value
    * @param tokenData
    */
@@ -32,7 +32,7 @@ export abstract class UnshieldNote {
     this.hash = getNoteHash(toAddress, tokenData, value);
   }
 
-  get unshieldData(): UnshieldData {
+  get decryptData(): DecryptData {
     return {
       toAddress: this.toAddress,
       value: this.value,

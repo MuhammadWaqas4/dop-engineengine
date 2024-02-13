@@ -26,14 +26,14 @@ const createSpendingSolutionGroup = (
   tree: number,
   solutionValue: bigint,
   utxos: TXO[],
-  isUnshield: boolean,
+  isDecrypt: boolean,
 ): SpendingSolutionGroup => {
-  if (isUnshield) {
+  if (isDecrypt) {
     return {
       spendingTree: tree,
       utxos,
       tokenOutputs: [],
-      unshieldValue: solutionValue,
+      decryptValue: solutionValue,
       tokenData: output.tokenData,
     };
   }
@@ -43,7 +43,7 @@ const createSpendingSolutionGroup = (
     spendingTree: tree,
     utxos,
     tokenOutputs: [solutionOutput],
-    unshieldValue: 0n,
+    decryptValue: 0n,
     tokenData: output.tokenData,
   };
 };
@@ -82,7 +82,7 @@ export const createSpendingSolutionsForValue = (
   treeSortedBalances: TreeBalance[],
   remainingOutputs: TransactNote[],
   excludedUTXOIDPositions: string[],
-  isUnshield: boolean,
+  isDecrypt: boolean,
 ): SpendingSolutionGroup[] => {
   // Primary output to find UTXOs for.
   const primaryOutput = remainingOutputs[0];
@@ -114,7 +114,7 @@ export const createSpendingSolutionsForValue = (
       nullUtxo.tree,
       nullNote.value,
       utxos,
-      isUnshield,
+      isDecrypt,
     );
     return [nullSpendingSolutionGroup];
   }
@@ -146,7 +146,7 @@ export const createSpendingSolutionsForValue = (
         tree,
         solutionValue,
         utxos,
-        isUnshield,
+        isDecrypt,
       );
       spendingSolutionGroups.push(spendingSolutionGroup);
 
@@ -160,7 +160,7 @@ export const createSpendingSolutionsForValue = (
       if (amountToFill <= 0n) {
         // Use any remaining change to fill the secondary output.
         const change = 0n - amountToFill;
-        if (change > 0n && secondaryOutput && !isUnshield) {
+        if (change > 0n && secondaryOutput && !isDecrypt) {
           let secondaryNoteValue: bigint;
           let finalAmountToFill: bigint;
           if (secondaryOutput.value < change) {

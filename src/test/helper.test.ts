@@ -8,7 +8,7 @@ import {
   EngineEvent,
   QuickSync,
   WalletScannedEventData,
-  UnshieldStoredEvent,
+  DecryptStoredEvent,
 } from '../models/event-types';
 import { AbstractWallet } from '../wallet/abstract-wallet';
 import { Chain } from '../models/engine-types';
@@ -65,7 +65,7 @@ export const mockQuickSync: QuickSync = (
 ): Promise<AccumulatedEvents> =>
   Promise.resolve({
     commitmentEvents: [] as CommitmentEvent[],
-    unshieldEvents: [] as UnshieldStoredEvent[],
+    decryptEvents: [] as DecryptStoredEvent[],
     nullifierEvents: [] as Nullifier[],
   });
 
@@ -108,12 +108,12 @@ export const awaitRailgunSmartWalletEvent = async (
   );
 };
 
-export const awaitRailgunSmartWalletShield = async (
+export const awaitRailgunSmartWalletEncrypt = async (
   railgunSmartWallet: RailgunSmartWalletContract,
 ) => {
   return awaitRailgunSmartWalletEvent(
     railgunSmartWallet,
-    railgunSmartWallet.contract.filters.Shield(),
+    railgunSmartWallet.contract.filters.Encrypt(),
   );
 };
 
@@ -126,12 +126,12 @@ export const awaitRailgunSmartWalletTransact = async (
   );
 };
 
-export const awaitRailgunSmartWalletUnshield = async (
+export const awaitRailgunSmartWalletDecrypt = async (
   railgunSmartWallet: RailgunSmartWalletContract,
 ) => {
   return awaitRailgunSmartWalletEvent(
     railgunSmartWallet,
-    railgunSmartWallet.contract.filters.Unshield(),
+    railgunSmartWallet.contract.filters.Decrypt(),
   );
 };
 

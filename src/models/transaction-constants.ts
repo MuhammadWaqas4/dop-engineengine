@@ -1,6 +1,6 @@
 export const TOKEN_SUB_ID_NULL = '0x00';
 
-export const UnshieldFlag = {
+export const DecryptFlag = {
   NO_UNSHIELD: BigInt(0),
   UNSHIELD: BigInt(1),
   OVERRIDE: BigInt(2),

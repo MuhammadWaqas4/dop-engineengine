@@ -28,13 +28,13 @@ const _abi = [
       {
         indexed: false,
         internalType: "uint256",
-        name: "shieldFee",
+        name: "encryptFee",
         type: "uint256",
       },
       {
         indexed: false,
         internalType: "uint256",
-        name: "unshieldFee",
+        name: "decryptFee",
         type: "uint256",
       },
       {
@@ -175,17 +175,17 @@ const _abi = [
           },
           {
             internalType: "bytes32",
-            name: "shieldKey",
+            name: "encryptKey",
             type: "bytes32",
           },
         ],
         indexed: false,
-        internalType: "struct ShieldCiphertext[]",
-        name: "shieldCiphertext",
+        internalType: "struct EncryptCiphertext[]",
+        name: "encryptCiphertext",
         type: "tuple[]",
       },
     ],
-    name: "Shield",
+    name: "Encrypt",
     type: "event",
   },
   {
@@ -304,7 +304,7 @@ const _abi = [
         type: "uint256",
       },
     ],
-    name: "Unshield",
+    name: "Decrypt",
     type: "event",
   },
   {
@@ -467,12 +467,12 @@ const _abi = [
     inputs: [
       {
         internalType: "uint120",
-        name: "_shieldFee",
+        name: "_encryptFee",
         type: "uint120",
       },
       {
         internalType: "uint120",
-        name: "_unshieldFee",
+        name: "_decryptFee",
         type: "uint120",
       },
       {
@@ -731,8 +731,8 @@ const _abi = [
             type: "uint72",
           },
           {
-            internalType: "enum UnshieldType",
-            name: "unshield",
+            internalType: "enum DecryptType",
+            name: "decrypt",
             type: "uint8",
           },
           {
@@ -885,12 +885,12 @@ const _abi = [
       },
       {
         internalType: "uint120",
-        name: "_shieldFee",
+        name: "_encryptFee",
         type: "uint120",
       },
       {
         internalType: "uint120",
-        name: "_unshieldFee",
+        name: "_decryptFee",
         type: "uint120",
       },
       {
@@ -1222,28 +1222,28 @@ const _abi = [
               },
               {
                 internalType: "bytes32",
-                name: "shieldKey",
+                name: "encryptKey",
                 type: "bytes32",
               },
             ],
-            internalType: "struct ShieldCiphertext",
+            internalType: "struct EncryptCiphertext",
             name: "ciphertext",
             type: "tuple",
           },
         ],
-        internalType: "struct ShieldRequest[]",
-        name: "_shieldRequests",
+        internalType: "struct EncryptRequest[]",
+        name: "_encryptRequests",
         type: "tuple[]",
       },
     ],
-    name: "shield",
+    name: "encrypt",
     outputs: [],
     stateMutability: "payable",
     type: "function",
   },
   {
     inputs: [],
-    name: "shieldFee",
+    name: "encryptFee",
     outputs: [
       {
         internalType: "uint120",
@@ -1363,8 +1363,8 @@ const _abi = [
                 type: "uint72",
               },
               {
-                internalType: "enum UnshieldType",
-                name: "unshield",
+                internalType: "enum DecryptType",
+                name: "decrypt",
                 type: "uint8",
               },
               {
@@ -1455,7 +1455,7 @@ const _abi = [
               },
             ],
             internalType: "struct CommitmentPreimage",
-            name: "unshieldPreimage",
+            name: "decryptPreimage",
             type: "tuple",
           },
         ],
@@ -1613,8 +1613,8 @@ const _abi = [
                 type: "uint72",
               },
               {
-                internalType: "enum UnshieldType",
-                name: "unshield",
+                internalType: "enum DecryptType",
+                name: "decrypt",
                 type: "uint8",
               },
               {
@@ -1705,7 +1705,7 @@ const _abi = [
               },
             ],
             internalType: "struct CommitmentPreimage",
-            name: "unshieldPreimage",
+            name: "decryptPreimage",
             type: "tuple",
           },
         ],
@@ -1760,7 +1760,7 @@ const _abi = [
   },
   {
     inputs: [],
-    name: "unshieldFee",
+    name: "decryptFee",
     outputs: [
       {
         internalType: "uint120",
@@ -1914,8 +1914,8 @@ const _abi = [
                 type: "uint72",
               },
               {
-                internalType: "enum UnshieldType",
-                name: "unshield",
+                internalType: "enum DecryptType",
+                name: "decrypt",
                 type: "uint8",
               },
               {
@@ -2006,7 +2006,7 @@ const _abi = [
               },
             ],
             internalType: "struct CommitmentPreimage",
-            name: "unshieldPreimage",
+            name: "decryptPreimage",
             type: "tuple",
           },
         ],
@@ -2116,8 +2116,8 @@ const _abi = [
                 type: "uint72",
               },
               {
-                internalType: "enum UnshieldType",
-                name: "unshield",
+                internalType: "enum DecryptType",
+                name: "decrypt",
                 type: "uint8",
               },
               {
@@ -2208,7 +2208,7 @@ const _abi = [
               },
             ],
             internalType: "struct CommitmentPreimage",
-            name: "unshieldPreimage",
+            name: "decryptPreimage",
             type: "tuple",
           },
         ],

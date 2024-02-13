@@ -5,11 +5,11 @@ import { Wallet } from 'ethers';
 import { RailgunSmartWalletContract } from '../contracts/railgun-smart-wallet/railgun-smart-wallet';
 import { Chain } from '../models/engine-types';
 import { NFTTokenData, TokenType } from '../models/formatted-types';
-import { ShieldNoteNFT } from '../note/nft/shield-note-nft';
+import { EncryptNoteNFT } from '../note/nft/encrypt-note-nft';
 import { hexToBytes, randomHex } from '../utils/bytes';
 import { RailgunWallet } from '../wallet/railgun-wallet';
 import {
-  awaitRailgunSmartWalletShield,
+  awaitRailgunSmartWalletEncrypt,
   awaitScan,
   sendTransactionWithLatestNonce,
 } from './helper.test';
@@ -36,7 +36,7 @@ export const mintNFTsID01ForTest = async (nft: TestERC721, ethersWallet: Wallet)
   expect(tokenURI).to.equal('');
 };
 
-export const shieldNFTForTest = async (
+export const encryptNFTForTest = async (
   wallet: RailgunWallet,
   ethersWallet: Wallet,
   railgunSmartWalletContract: RailgunSmartWalletContract,
@@ -44,27 +44,27 @@ export const shieldNFTForTest = async (
   random: string,
   nftAddress: string,
   tokenSubID: string,
-): Promise<ShieldNoteNFT> => {
-  // Create shield
+): Promise<EncryptNoteNFT> => {
+  // Create encrypt
   const nftTokenData: NFTTokenData = {
     tokenAddress: nftAddress,
     tokenType: TokenType.ERC721,
     tokenSubID,
   };
-  const shield = new ShieldNoteNFT(wallet.masterPublicKey, random, 1n, nftTokenData);
-  const shieldPrivateKey = hexToBytes(randomHex(32));
-  const shieldInput = await shield.serialize(shieldPrivateKey, wallet.getViewingKeyPair().pubkey);
+  const encrypt = new EncryptNoteNFT(wallet.masterPublicKey, random, 1n, nftTokenData);
+  const encryptPrivateKey = hexToBytes(randomHex(32));
+  const encryptInput = await encrypt.serialize(encryptPrivateKey, wallet.getViewingKeyPair().pubkey);
 
-  const shieldTx = await railgunSmartWalletContract.generateShield([shieldInput]);
+  const encryptTx = await railgunSmartWalletContract.generateEncrypt([encryptInput]);
 
-  // Send shield on chain
-  const txResponse = await sendTransactionWithLatestNonce(ethersWallet, shieldTx);
+  // Send encrypt on chain
+  const txResponse = await sendTransactionWithLatestNonce(ethersWallet, encryptTx);
 
   await Promise.all([
-    awaitRailgunSmartWalletShield(railgunSmartWalletContract),
-    promiseTimeout(awaitScan(wallet, chain), 10000, 'Timed out waiting for NFT shield'),
+    awaitRailgunSmartWalletEncrypt(railgunSmartWalletContract),
+    promiseTimeout(awaitScan(wallet, chain), 10000, 'Timed out waiting for NFT encrypt'),
     txResponse.wait(),
   ]);
 
-  return shield;
+  return encrypt;
 };

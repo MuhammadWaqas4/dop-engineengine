@@ -9,7 +9,7 @@ import EngineDebug from '../debugger/debugger';
 import { encodeAddress } from '../key-derivation/bech32';
 import { SpendingPublicKey, ViewingKeyPair, WalletNode } from '../key-derivation/wallet-node';
 import { MerkleTree } from '../merkletree/merkletree';
-import { EngineEvent, UnshieldStoredEvent, WalletScannedEventData } from '../models/event-types';
+import { EngineEvent, DecryptStoredEvent, WalletScannedEventData } from '../models/event-types';
 import {
   BytesData,
   Ciphertext,
@@ -21,7 +21,7 @@ import {
   NoteAnnotationData,
   NoteSerialized,
   OutputType,
-  ShieldCommitment,
+  EncryptCommitment,
   StoredReceiveCommitment,
   StoredSendCommitment,
   TransactCommitment,
@@ -54,7 +54,7 @@ import {
   TransactionHistoryItemVersion,
   TransactionHistoryTokenAmount,
   TransactionHistoryTransferTokenAmount,
-  TransactionHistoryUnshieldTokenAmount,
+  TransactionHistoryDecryptTokenAmount,
   TreeBalance,
   ViewOnlyWalletData,
   WalletData,
@@ -66,7 +66,7 @@ import { getChainFullNetworkID } from '../chain/chain';
 import { TransactNote } from '../note/transact-note';
 import { binarySearchForUpperBoundIndex } from '../utils/search';
 import { getSharedSymmetricKeyLegacy } from '../utils/keys-utils-legacy';
-import { ShieldNote } from '../note';
+import { EncryptNote } from '../note';
 import { getTokenDataHash, serializeTokenData } from '../note/note-util';
 import { TokenDataGetter } from '../token/token-data-getter';
 import { isDefined } from '../utils/is-defined';
@@ -415,17 +415,17 @@ abstract class AbstractWallet extends EventEmitter {
         }
         break;
       }
-      case CommitmentType.ShieldCommitment: {
-        const commitment = leaf as ShieldCommitment;
+      case CommitmentType.EncryptCommitment: {
+        const commitment = leaf as EncryptCommitment;
         const sharedKey = await getSharedSymmetricKey(
           viewingPrivateKey,
-          hexToBytes(commitment.shieldKey),
+          hexToBytes(commitment.encryptKey),
         );
         try {
           if (!sharedKey) {
-            throw new Error('No sharedKey from shield note');
+            throw new Error('No sharedKey from encrypt note');
           }
-          const random = ShieldNote.decryptRandom(commitment.encryptedBundle, sharedKey);
+          const random = EncryptNote.decryptRandom(commitment.encryptedBundle, sharedKey);
 
           const serialized: NoteSerialized = {
             npk: commitment.preImage.npk,
@@ -437,7 +437,7 @@ abstract class AbstractWallet extends EventEmitter {
             outputType: OutputType.Transfer,
             senderAddress: undefined,
             memoText: undefined,
-            shieldFee: commitment.fee,
+            encryptFee: commitment.fee,
             blockNumber: leaf.blockNumber,
           };
 
@@ -901,7 +901,7 @@ abstract class AbstractWallet extends EventEmitter {
           ...receiveItem,
           transferTokenAmounts: [],
           changeTokenAmounts: [],
-          unshieldTokenAmounts: [],
+          decryptTokenAmounts: [],
           version: TransactionHistoryItemVersion.Unknown,
         });
       }
@@ -957,7 +957,7 @@ abstract class AbstractWallet extends EventEmitter {
         amount: note.value,
         memoText: note.memoText,
         senderAddress: note.getSenderAddress(),
-        shieldFee: note.shieldFee,
+        encryptFee: note.encryptFee,
       });
     });
 
@@ -978,12 +978,12 @@ abstract class AbstractWallet extends EventEmitter {
     return TransactionHistoryItemVersion.UpdatedNov2022;
   }
 
-  async getAllUnshieldEventsFromSpentNullifiers(
+  async getAllDecryptEventsFromSpentNullifiers(
     chain: Chain,
     filteredTXOs: TXO[],
-  ): Promise<UnshieldStoredEvent[]> {
+  ): Promise<DecryptStoredEvent[]> {
     const merkletree = this.getMerkletreeForChain(chain);
-    const unshieldEvents: UnshieldStoredEvent[] = [];
+    const decryptEvents: DecryptStoredEvent[] = [];
 
     const seenSpentTxids: string[] = [];
 
@@ -1000,22 +1000,22 @@ abstract class AbstractWallet extends EventEmitter {
         }
         seenSpentTxids.push(spendtxid);
 
-        // Nullifier exists. Find unshield events from txid.
-        const unshieldEventsForNullifier = await merkletree.getUnshieldEvents(spendtxid);
-        const filteredEventsForNullifier = unshieldEventsForNullifier.filter(
+        // Nullifier exists. Find decrypt events from txid.
+        const decryptEventsForNullifier = await merkletree.getDecryptEvents(spendtxid);
+        const filteredEventsForNullifier = decryptEventsForNullifier.filter(
           (event) =>
-            unshieldEvents.find((existingUnshieldEvent) =>
-              AbstractWallet.compareUnshieldEvents(existingUnshieldEvent, event),
+            decryptEvents.find((existingDecryptEvent) =>
+              AbstractWallet.compareDecryptEvents(existingDecryptEvent, event),
             ) == null,
         );
-        unshieldEvents.push(...filteredEventsForNullifier);
+        decryptEvents.push(...filteredEventsForNullifier);
       }),
     );
 
-    return unshieldEvents;
+    return decryptEvents;
   }
 
-  private static compareUnshieldEvents(a: UnshieldStoredEvent, b: UnshieldStoredEvent): boolean {
+  private static compareDecryptEvents(a: DecryptStoredEvent, b: DecryptStoredEvent): boolean {
     return a.txid === b.txid && a.eventLogIndex === b.eventLogIndex;
   }
 
@@ -1024,8 +1024,8 @@ abstract class AbstractWallet extends EventEmitter {
     filteredTXOs: TXO[],
     startingBlock: Optional<number>,
   ): Promise<TransactionHistoryEntrySpent[]> {
-    const [allUnshieldEvents, sentCommitments] = await Promise.all([
-      this.getAllUnshieldEventsFromSpentNullifiers(chain, filteredTXOs),
+    const [allDecryptEvents, sentCommitments] = await Promise.all([
+      this.getAllDecryptEventsFromSpentNullifiers(chain, filteredTXOs),
       this.getSentCommitments(chain, startingBlock),
     ]);
 
@@ -1042,7 +1042,7 @@ abstract class AbstractWallet extends EventEmitter {
             timestamp,
             blockNumber: note.blockNumber,
             tokenAmounts: [],
-            unshieldEvents: [],
+            decryptEvents: [],
             version: AbstractWallet.getTransactionHistoryItemVersion(
               noteAnnotationData,
               isLegacyTransactNote,
@@ -1071,43 +1071,43 @@ abstract class AbstractWallet extends EventEmitter {
       },
     );
 
-    // Add unshield events to txidTransactionMap
-    allUnshieldEvents.forEach((unshieldEvent) => {
-      const foundUnshieldTransactionInTransactCommitments = txidTransactionMap[unshieldEvent.txid];
-      if (!isDefined(foundUnshieldTransactionInTransactCommitments)) {
-        // This will occur on a self-signed unshield.
-        // There is no commitment (or tokenAmounts) for this kind of unshield transaction.
-        txidTransactionMap[unshieldEvent.txid] = {
-          txid: unshieldEvent.txid,
-          timestamp: unshieldEvent.timestamp,
-          blockNumber: unshieldEvent.blockNumber,
-          unshieldEvents: [unshieldEvent],
+    // Add decrypt events to txidTransactionMap
+    allDecryptEvents.forEach((decryptEvent) => {
+      const foundDecryptTransactionInTransactCommitments = txidTransactionMap[decryptEvent.txid];
+      if (!isDefined(foundDecryptTransactionInTransactCommitments)) {
+        // This will occur on a self-signed decrypt.
+        // There is no commitment (or tokenAmounts) for this kind of decrypt transaction.
+        txidTransactionMap[decryptEvent.txid] = {
+          txid: decryptEvent.txid,
+          timestamp: decryptEvent.timestamp,
+          blockNumber: decryptEvent.blockNumber,
+          decryptEvents: [decryptEvent],
           tokenAmounts: [],
           version: TransactionHistoryItemVersion.UpdatedNov2022,
         };
         return;
       }
 
-      // Unshield event exists. Add to its amount rather than creating a new event.
-      // Multiple unshields of the same token can occur in cases of complex circuits. (More than 10 inputs to the unshield).
-      const existingUnshieldEvent = txidTransactionMap[unshieldEvent.txid].unshieldEvents.find(
-        (existingEvent) => AbstractWallet.compareUnshieldEvents(existingEvent, unshieldEvent),
+      // Decrypt event exists. Add to its amount rather than creating a new event.
+      // Multiple decrypts of the same token can occur in cases of complex circuits. (More than 10 inputs to the decrypt).
+      const existingDecryptEvent = txidTransactionMap[decryptEvent.txid].decryptEvents.find(
+        (existingEvent) => AbstractWallet.compareDecryptEvents(existingEvent, decryptEvent),
       );
-      if (existingUnshieldEvent) {
-        // Add amount to existing unshield event.
-        existingUnshieldEvent.amount = (
-          BigInt(existingUnshieldEvent.amount) + BigInt(unshieldEvent.amount)
+      if (existingDecryptEvent) {
+        // Add amount to existing decrypt event.
+        existingDecryptEvent.amount = (
+          BigInt(existingDecryptEvent.amount) + BigInt(decryptEvent.amount)
         ).toString();
         return;
       }
-      txidTransactionMap[unshieldEvent.txid].unshieldEvents.push(unshieldEvent);
+      txidTransactionMap[decryptEvent.txid].decryptEvents.push(decryptEvent);
     });
 
     const preProcessHistory: TransactionHistoryEntryPreprocessSpent[] =
       Object.values(txidTransactionMap);
 
     const history: TransactionHistoryEntrySpent[] = preProcessHistory.map(
-      ({ txid, timestamp, blockNumber, tokenAmounts, unshieldEvents, version }) => {
+      ({ txid, timestamp, blockNumber, tokenAmounts, decryptEvents, version }) => {
         const transferTokenAmounts: TransactionHistoryTransferTokenAmount[] = [];
         let relayerFeeTokenAmount: Optional<TransactionHistoryTokenAmount>;
         const changeTokenAmounts: TransactionHistoryTokenAmount[] = [];
@@ -1131,22 +1131,22 @@ abstract class AbstractWallet extends EventEmitter {
           }
         });
 
-        const unshieldTokenAmounts: TransactionHistoryUnshieldTokenAmount[] = unshieldEvents.map(
-          (unshieldEvent) => {
+        const decryptTokenAmounts: TransactionHistoryDecryptTokenAmount[] = decryptEvents.map(
+          (decryptEvent) => {
             const tokenData = serializeTokenData(
-              unshieldEvent.tokenAddress,
-              unshieldEvent.tokenType,
-              unshieldEvent.tokenSubID,
+              decryptEvent.tokenAddress,
+              decryptEvent.tokenType,
+              decryptEvent.tokenSubID,
             );
             const tokenHash = getTokenDataHash(tokenData);
             return {
               tokenHash,
               tokenData,
-              amount: BigInt(unshieldEvent.amount),
+              amount: BigInt(decryptEvent.amount),
               memoText: undefined,
-              recipientAddress: unshieldEvent.toAddress,
+              recipientAddress: decryptEvent.toAddress,
               senderAddress: undefined,
-              unshieldFee: unshieldEvent.fee,
+              decryptFee: decryptEvent.fee,
             };
           },
         );
@@ -1158,7 +1158,7 @@ abstract class AbstractWallet extends EventEmitter {
           transferTokenAmounts,
           relayerFeeTokenAmount,
           changeTokenAmounts,
-          unshieldTokenAmounts,
+          decryptTokenAmounts,
           version,
         };
         return historyEntry;

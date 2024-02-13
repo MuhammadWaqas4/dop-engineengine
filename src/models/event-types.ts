@@ -13,7 +13,7 @@ export enum EngineEvent {
 export type QuickSync = (chain: Chain, startingBlock: number) => Promise<AccumulatedEvents>;
 export type EventsCommitmentListener = (event: CommitmentEvent) => Promise<void>;
 export type EventsNullifierListener = (nullifiers: Nullifier[]) => Promise<void>;
-export type EventsUnshieldListener = (unshields: UnshieldStoredEvent[]) => Promise<void>;
+export type EventsDecryptListener = (decrypts: DecryptStoredEvent[]) => Promise<void>;
 
 export type CommitmentEvent = {
   txid: string;
@@ -23,7 +23,7 @@ export type CommitmentEvent = {
   blockNumber: number;
 };
 
-export type UnshieldStoredEvent = {
+export type DecryptStoredEvent = {
   txid: string;
   timestamp: Optional<number>;
   toAddress: string;
@@ -38,7 +38,7 @@ export type UnshieldStoredEvent = {
 
 export type AccumulatedEvents = {
   commitmentEvents: CommitmentEvent[];
-  unshieldEvents: UnshieldStoredEvent[];
+  decryptEvents: DecryptStoredEvent[];
   nullifierEvents: Nullifier[];
 };
 

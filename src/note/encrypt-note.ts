@@ -1,13 +1,13 @@
 import { poseidon } from 'circomlibjs';
 import { bytesToHex } from 'ethereum-cryptography/utils';
-import { ShieldCiphertext, TokenData } from '../models/formatted-types';
+import { EncryptCiphertext, TokenData } from '../models/formatted-types';
 import { getPublicViewingKey, getSharedSymmetricKey } from '../utils';
 import { ByteLength, combine, hexlify, hexToBigInt, nToHex } from '../utils/bytes';
 import { aes } from '../utils/encryption';
 import { assertValidNoteRandom, assertValidNoteToken, getTokenDataHash } from './note-util';
-import { ShieldRequestStruct } from '../abi/typechain/RailgunSmartWallet';
+import { EncryptRequestStruct } from '../abi/typechain/RailgunSmartWallet';
 
-export abstract class ShieldNote {
+export abstract class EncryptNote {
   readonly masterPublicKey: bigint;
 
   readonly random: string;
@@ -36,10 +36,10 @@ export abstract class ShieldNote {
   }
 
   /**
-   * Used to generate a shieldPrivateKey by signing this message with public wallet.
-   * After shielding, the shieldPrivateKey can then be used to get the 0zk address of the receiver.
+   * Used to generate a encryptPrivateKey by signing this message with public wallet.
+   * After encrypting, the encryptPrivateKey can then be used to get the 0zk address of the receiver.
    */
-  static getShieldPrivateKeySignatureMessage() {
+  static getEncryptPrivateKeySignatureMessage() {
     // DO NOT MODIFY THIS CONSTANT.
     return 'RAILGUN_SHIELD';
   }
@@ -76,13 +76,13 @@ export abstract class ShieldNote {
    * @returns serialized note
    */
   async serialize(
-    shieldPrivateKey: Uint8Array,
+    encryptPrivateKey: Uint8Array,
     receiverViewingPublicKey: Uint8Array,
-  ): Promise<ShieldRequestStruct> {
+  ): Promise<EncryptRequestStruct> {
     // Get shared key
-    const sharedKey = await getSharedSymmetricKey(shieldPrivateKey, receiverViewingPublicKey);
+    const sharedKey = await getSharedSymmetricKey(encryptPrivateKey, receiverViewingPublicKey);
     if (!sharedKey) {
-      throw new Error('Could not generated shared symmetric key for shielding.');
+      throw new Error('Could not generated shared symmetric key for encrypting.');
     }
 
     // Encrypt random
@@ -91,19 +91,19 @@ export abstract class ShieldNote {
     // Encrypt receiver public key
     const encryptedReceiver = aes.ctr.encrypt(
       [bytesToHex(receiverViewingPublicKey)],
-      shieldPrivateKey,
+      encryptPrivateKey,
     );
 
-    const shieldKey = bytesToHex(await getPublicViewingKey(shieldPrivateKey));
+    const encryptKey = bytesToHex(await getPublicViewingKey(encryptPrivateKey));
 
     // Construct ciphertext
-    const ciphertext: ShieldCiphertext = {
+    const ciphertext: EncryptCiphertext = {
       encryptedBundle: [
         hexlify(`${encryptedRandom.iv}${encryptedRandom.tag}`, true),
         hexlify(combine([...encryptedRandom.data, encryptedReceiver.iv]), true),
         hexlify(combine(encryptedReceiver.data), true),
       ],
-      shieldKey: hexlify(shieldKey, true),
+      encryptKey: hexlify(encryptKey, true),
     };
 
     return {

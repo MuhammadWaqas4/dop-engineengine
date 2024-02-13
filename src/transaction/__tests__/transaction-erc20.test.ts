@@ -62,7 +62,7 @@ const random = randomHex(16);
 type makeNoteFn = (value?: bigint) => Promise<TransactNote>;
 let makeNote: makeNoteFn;
 
-const shieldLeaf: LegacyGeneratedCommitment = {
+const encryptLeaf: LegacyGeneratedCommitment = {
   commitmentType: CommitmentType.LegacyGeneratedCommitment,
   hash: '10c139398677d31020ddf97e0c73239710c956a52a7ea082a1e84815582bfb5f',
   txid: '0xc97a2d06ceb87f81752bd58310e4aca822ae18a747e4dde752020e0b308a3aee',
@@ -131,7 +131,7 @@ describe('Transaction/ERC20', function test() {
       );
     };
     merkletree.rootValidator = () => Promise.resolve(true);
-    await merkletree.queueLeaves(0, 0, [shieldLeaf]); // start with a shield
+    await merkletree.queueLeaves(0, 0, [encryptLeaf]); // start with a encrypt
     await merkletree.updateTrees();
 
     let scanProgress = 0;
@@ -148,7 +148,7 @@ describe('Transaction/ERC20', function test() {
   it('Should hash bound parameters', async () => {
     const params: BoundParamsStruct = {
       treeNumber: BigInt(0),
-      unshield: BigInt(0),
+      decrypt: BigInt(0),
       adaptContract: formatToByteLength('00', 20, true),
       adaptParams: formatToByteLength('00', 32, true),
       chainID: chain.id,
@@ -675,7 +675,7 @@ describe('Transaction/ERC20', function test() {
 
     const tokenDataBadAddress = getTokenDataERC20('0x00000000000000000000000000000000000000ff');
 
-    transaction2.addUnshieldData({
+    transaction2.addDecryptData({
       toAddress: ethersWallet.address,
       value: 12n,
       tokenData: tokenDataBadAddress,
@@ -688,9 +688,9 @@ describe('Transaction/ERC20', function test() {
     );
   });
 
-  it('Should generate validated inputs for transaction batch - unshield', async () => {
+  it('Should generate validated inputs for transaction batch - decrypt', async () => {
     transactionBatch.addOutput(await makeNote());
-    transactionBatch.addUnshieldData({
+    transactionBatch.addDecryptData({
       toAddress: ethersWallet.address,
       value: 2n,
       tokenData,

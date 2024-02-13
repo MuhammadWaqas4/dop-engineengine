@@ -249,7 +249,7 @@ describe('Solutions/Complex Solutions', () => {
       sortedTreeBalances,
       remainingOutputs0,
       [],
-      false, // isUnshield
+      false, // isDecrypt
     );
     // Ensure the 0n output was removed.
     expect(remainingOutputs0.map((note) => note.value)).to.deep.equal([]);
@@ -284,7 +284,7 @@ describe('Solutions/Complex Solutions', () => {
       sortedTreeBalances,
       remainingOutputs1,
       [],
-      false, // isUnshield
+      false, // isDecrypt
     );
     // Ensure the 79n output was removed.
     // 69n output is 70n - 1n ... change from secondary output.
@@ -317,7 +317,7 @@ describe('Solutions/Complex Solutions', () => {
       sortedTreeBalances,
       remainingOutputs2,
       [],
-      false, // isUnshield
+      false, // isDecrypt
     );
     // Ensure the 150 output was removed.
     expect(remainingOutputs2.map((note) => note.value)).to.deep.equal([50n, 60n]);
@@ -348,7 +348,7 @@ describe('Solutions/Complex Solutions', () => {
         sortedTreeBalances,
         remainingOutputs3,
         [],
-        false, // isUnshield
+        false, // isDecrypt
       ),
     ).to.throw('Balance too low: requires additional UTXOs to satisfy spending solution.');
   });

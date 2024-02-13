@@ -1,4 +1,4 @@
-import { UnshieldStoredEvent } from './event-types';
+import { DecryptStoredEvent } from './event-types';
 import { NoteAnnotationData, TokenData } from './formatted-types';
 import { TXO } from './txo-types';
 
@@ -53,12 +53,12 @@ export type TransactionHistoryTokenAmount = {
 export type TransactionHistoryTransferTokenAmount = TransactionHistoryTokenAmount & {
   recipientAddress: string;
 };
-export type TransactionHistoryUnshieldTokenAmount = TransactionHistoryTransferTokenAmount & {
-  unshieldFee: string;
+export type TransactionHistoryDecryptTokenAmount = TransactionHistoryTransferTokenAmount & {
+  decryptFee: string;
 };
 export type TransactionHistoryReceiveTokenAmount = TransactionHistoryTokenAmount & {
   senderAddress: Optional<string>;
-  shieldFee: Optional<string>;
+  encryptFee: Optional<string>;
 };
 export type TransactionHistoryEntryReceived = {
   txid: string;
@@ -73,7 +73,7 @@ export type TransactionHistoryEntrySpent = {
   transferTokenAmounts: TransactionHistoryTransferTokenAmount[];
   changeTokenAmounts: TransactionHistoryTokenAmount[];
   relayerFeeTokenAmount?: TransactionHistoryTokenAmount;
-  unshieldTokenAmounts: TransactionHistoryUnshieldTokenAmount[];
+  decryptTokenAmounts: TransactionHistoryDecryptTokenAmount[];
   version: TransactionHistoryItemVersion;
 };
 export type TransactionHistoryEntry = TransactionHistoryEntrySpent &
@@ -84,11 +84,11 @@ export type TransactionHistoryEntryPreprocessSpent = {
   blockNumber: Optional<number>;
   tokenAmounts: TransactionHistoryTokenAmount[];
   version: TransactionHistoryItemVersion;
-  unshieldEvents: UnshieldStoredEvent[];
+  decryptEvents: DecryptStoredEvent[];
 };
 export enum TransactionHistoryItemVersion {
   Unknown = 0, // Receive note only: noteAnnotationData metadata not possible
   Legacy = 1, // No noteAnnotationData on spent notes
   UpdatedAug2022 = 2, // Adds noteAnnotationData for spent notes (outputType)
-  UpdatedNov2022 = 3, // Adds unshields and possible sender for received notes
+  UpdatedNov2022 = 3, // Adds decrypts and possible sender for received notes
 }

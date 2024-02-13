@@ -15,7 +15,7 @@ import { getTokenDataERC20 } from '../../note/note-util';
 import { ZERO_ADDRESS } from '../../utils/constants';
 import { RelayAdaptHelper } from './relay-adapt-helper';
 import EngineDebug from '../../debugger/debugger';
-import { ShieldRequestStruct } from '../../abi/typechain/RailgunSmartWallet';
+import { EncryptRequestStruct } from '../../abi/typechain/RailgunSmartWallet';
 import { RelayAdapt, TransactionStruct } from '../../abi/typechain/RelayAdapt';
 import { PayableOverrides } from '../../abi/typechain/common';
 
@@ -49,45 +49,45 @@ export class RelayAdaptContract {
     ) as unknown as RelayAdapt;
   }
 
-  async populateShieldBaseToken(shieldRequest: ShieldRequestStruct): Promise<ContractTransaction> {
+  async populateEncryptBaseToken(encryptRequest: EncryptRequestStruct): Promise<ContractTransaction> {
     const orderedCalls: ContractTransaction[] = await Promise.all([
-      this.contract.wrapBase.populateTransaction(shieldRequest.preimage.value),
-      this.populateRelayShields([shieldRequest]),
+      this.contract.wrapBase.populateTransaction(encryptRequest.preimage.value),
+      this.populateRelayEncrypts([encryptRequest]),
     ]);
     return this.populateRelayMulticall(orderedCalls, {
-      value: shieldRequest.preimage.value,
+      value: encryptRequest.preimage.value,
     });
   }
 
   async populateMulticall(
     calls: ContractTransaction[],
-    shieldRequests: ShieldRequestStruct[],
+    encryptRequests: EncryptRequestStruct[],
   ): Promise<ContractTransaction> {
-    const orderedCalls = await this.getOrderedCallsForCrossContractCalls(calls, shieldRequests);
+    const orderedCalls = await this.getOrderedCallsForCrossContractCalls(calls, encryptRequests);
     return this.populateRelayMulticall(orderedCalls, {});
   }
 
   /**
    * @returns Populated transaction
    */
-  private populateRelayShields(
-    shieldRequests: ShieldRequestStruct[],
+  private populateRelayEncrypts(
+    encryptRequests: EncryptRequestStruct[],
   ): Promise<ContractTransaction> {
-    return this.contract.shield.populateTransaction(shieldRequests);
+    return this.contract.encrypt.populateTransaction(encryptRequests);
   }
 
-  private async getOrderedCallsForUnshieldBaseToken(
-    unshieldAddress: string,
+  private async getOrderedCallsForDecryptBaseToken(
+    decryptAddress: string,
   ): Promise<ContractTransaction[]> {
     // Use 0x00 address ERC20 to represent base token.
     const baseTokenData = getTokenDataERC20(ZERO_ADDRESS);
 
-    // Automatically unwraps and unshields all tokens.
+    // Automatically unwraps and decrypts all tokens.
     const value = 0n;
 
     const baseTokenTransfer: RelayAdapt.TokenTransferStruct = {
       token: baseTokenData,
-      to: unshieldAddress,
+      to: decryptAddress,
       value,
     };
 
@@ -97,13 +97,13 @@ export class RelayAdaptContract {
     ]);
   }
 
-  async getRelayAdaptParamsUnshieldBaseToken(
+  async getRelayAdaptParamsDecryptBaseToken(
     dummyTransactions: TransactionStruct[],
-    unshieldAddress: string,
+    decryptAddress: string,
     random: string,
   ): Promise<string> {
-    const orderedCalls: ContractTransaction[] = await this.getOrderedCallsForUnshieldBaseToken(
-      unshieldAddress,
+    const orderedCalls: ContractTransaction[] = await this.getOrderedCallsForDecryptBaseToken(
+      decryptAddress,
     );
 
     const requireSuccess = true;
@@ -115,13 +115,13 @@ export class RelayAdaptContract {
     );
   }
 
-  async populateUnshieldBaseToken(
+  async populateDecryptBaseToken(
     transactions: TransactionStruct[],
-    unshieldAddress: string,
+    decryptAddress: string,
     random31Bytes: string,
   ): Promise<ContractTransaction> {
-    const orderedCalls: ContractTransaction[] = await this.getOrderedCallsForUnshieldBaseToken(
-      unshieldAddress,
+    const orderedCalls: ContractTransaction[] = await this.getOrderedCallsForDecryptBaseToken(
+      decryptAddress,
     );
 
     const requireSuccess = true;
@@ -139,11 +139,11 @@ export class RelayAdaptContract {
 
   private async getOrderedCallsForCrossContractCalls(
     crossContractCalls: ContractTransaction[],
-    relayShieldRequests: ShieldRequestStruct[],
+    relayEncryptRequests: EncryptRequestStruct[],
   ): Promise<ContractTransaction[]> {
     const orderedCallPromises: ContractTransaction[] = [...crossContractCalls];
-    if (relayShieldRequests.length) {
-      orderedCallPromises.push(await this.populateRelayShields(relayShieldRequests));
+    if (relayEncryptRequests.length) {
+      orderedCallPromises.push(await this.populateRelayEncrypts(relayEncryptRequests));
     }
     return orderedCallPromises;
   }
@@ -152,23 +152,23 @@ export class RelayAdaptContract {
     isGasEstimate: boolean,
     isRelayerTransaction: boolean,
   ): boolean {
-    // If the cross contract calls (multicalls) fail, the Relayer Fee and Shields should continue to process.
+    // If the cross contract calls (multicalls) fail, the Relayer Fee and Encrypts should continue to process.
     // We should only !requireSuccess for production relayer transactions (not gas estimates).
     const continueAfterMulticallFailure = isRelayerTransaction && !isGasEstimate;
     return !continueAfterMulticallFailure;
   }
 
   async getRelayAdaptParamsCrossContractCalls(
-    dummyUnshieldTransactions: TransactionStruct[],
+    dummyDecryptTransactions: TransactionStruct[],
     crossContractCalls: ContractTransaction[],
-    relayShieldRequests: ShieldRequestStruct[],
+    relayEncryptRequests: EncryptRequestStruct[],
     random: string,
     isRelayerTransaction: boolean,
     minGasLimit?: bigint,
   ): Promise<string> {
     const orderedCalls: ContractTransaction[] = await this.getOrderedCallsForCrossContractCalls(
       crossContractCalls,
-      relayShieldRequests,
+      relayEncryptRequests,
     );
 
     // Adapt params not required for gas estimates.
@@ -184,7 +184,7 @@ export class RelayAdaptContract {
       RelayAdaptContract.getMinimumGasLimitForContract(minimumGasLimit);
 
     return RelayAdaptHelper.getRelayAdaptParams(
-      dummyUnshieldTransactions,
+      dummyDecryptTransactions,
       random,
       requireSuccess,
       orderedCalls,
@@ -193,9 +193,9 @@ export class RelayAdaptContract {
   }
 
   async populateCrossContractCalls(
-    unshieldTransactions: TransactionStruct[],
+    decryptTransactions: TransactionStruct[],
     crossContractCalls: ContractTransaction[],
-    relayShieldRequests: ShieldRequestStruct[],
+    relayEncryptRequests: EncryptRequestStruct[],
     random31Bytes: string,
     isGasEstimate: boolean,
     isRelayerTransaction: boolean,
@@ -203,7 +203,7 @@ export class RelayAdaptContract {
   ): Promise<ContractTransaction> {
     const orderedCalls: ContractTransaction[] = await this.getOrderedCallsForCrossContractCalls(
       crossContractCalls,
-      relayShieldRequests,
+      relayEncryptRequests,
     );
 
     const requireSuccess = RelayAdaptContract.shouldRequireSuccessForCrossContractCalls(
@@ -216,7 +216,7 @@ export class RelayAdaptContract {
       RelayAdaptContract.getMinimumGasLimitForContract(minimumGasLimit);
 
     const populatedTransaction = await this.populateRelay(
-      unshieldTransactions,
+      decryptTransactions,
       random31Bytes,
       requireSuccess,
       orderedCalls,
@@ -232,7 +232,7 @@ export class RelayAdaptContract {
 
   static getMinimumGasLimitForContract(minimumGasLimit: bigint) {
     // Contract call needs ~50,000-150,000 less gas than the gasLimit setting.
-    // This can be more if there are complex UTXO sets for the unshield.
+    // This can be more if there are complex UTXO sets for the decrypt.
     return minimumGasLimit - 150_000n;
   }
 
