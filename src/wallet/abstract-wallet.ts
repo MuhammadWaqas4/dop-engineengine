@@ -21,7 +21,7 @@ import {
   NoteAnnotationData,
   NoteSerialized,
   OutputType,
-  ShieldCommitment,
+  EncryptCommitment,
   StoredReceiveCommitment,
   StoredSendCommitment,
   TransactCommitment,
@@ -415,11 +415,11 @@ abstract class AbstractWallet extends EventEmitter {
         }
         break;
       }
-      case CommitmentType.ShieldCommitment: {
-        const commitment = leaf as ShieldCommitment;
+      case CommitmentType.EncryptCommitment: {
+        const commitment = leaf as EncryptCommitment;
         const sharedKey = await getSharedSymmetricKey(
           viewingPrivateKey,
-          hexToBytes(commitment.shieldKey),
+          hexToBytes(commitment.encryptKey),
         );
         try {
           if (!sharedKey) {

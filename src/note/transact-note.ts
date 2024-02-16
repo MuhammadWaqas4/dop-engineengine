@@ -82,7 +82,7 @@ export class TransactNote {
 
   readonly memoText: Optional<string>;
 
-  // Only used during serialization/storage of ShieldCommitments.
+  // Only used during serialization/storage of EncryptCommitments.
   readonly shieldFee: Optional<string>;
 
   readonly blockNumber: Optional<number>;

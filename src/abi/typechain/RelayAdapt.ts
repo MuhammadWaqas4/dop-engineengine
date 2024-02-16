@@ -153,13 +153,13 @@ export type TransactionStructOutput = [
 
 export type ShieldCiphertextStruct = {
   encryptedBundle: [BytesLike, BytesLike, BytesLike];
-  shieldKey: BytesLike;
+  encryptKey: BytesLike;
 };
 
 export type ShieldCiphertextStructOutput = [
   encryptedBundle: [string, string, string],
-  shieldKey: string
-] & { encryptedBundle: [string, string, string]; shieldKey: string };
+  encryptKey: string
+] & { encryptedBundle: [string, string, string]; encryptKey: string };
 
 export type ShieldRequestStruct = {
   preimage: CommitmentPreimageStruct;
@@ -363,7 +363,7 @@ export interface RelayAdapt extends BaseContract {
     "payable"
   >;
 
-  shield: TypedContractMethod<
+  encrypt: TypedContractMethod<
     [_shieldRequests: ShieldRequestStruct[]],
     [void],
     "nonpayable"

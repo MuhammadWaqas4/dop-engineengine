@@ -165,7 +165,7 @@
           },
           {
             "internalType": "bytes32",
-            "name": "shieldKey",
+            "name": "encryptKey",
             "type": "bytes32"
           }
         ],
@@ -1212,7 +1212,7 @@
               },
               {
                 "internalType": "bytes32",
-                "name": "shieldKey",
+                "name": "encryptKey",
                 "type": "bytes32"
               }
             ],

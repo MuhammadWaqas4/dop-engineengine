@@ -636,7 +636,7 @@
               },
               {
                 "internalType": "bytes32",
-                "name": "shieldKey",
+                "name": "encryptKey",
                 "type": "bytes32"
               }
             ],
@@ -650,7 +650,7 @@
         "type": "tuple[]"
       }
     ],
-    "name": "shield",
+    "name": "encrypt",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

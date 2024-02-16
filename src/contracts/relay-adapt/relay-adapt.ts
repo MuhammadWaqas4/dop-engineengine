@@ -73,7 +73,7 @@ export class RelayAdaptContract {
   private populateRelayShields(
     shieldRequests: ShieldRequestStruct[],
   ): Promise<ContractTransaction> {
-    return this.contract.shield.populateTransaction(shieldRequests);
+    return this.contract.encrypt.populateTransaction(shieldRequests);
   }
 
   private async getOrderedCallsForUnshieldBaseToken(

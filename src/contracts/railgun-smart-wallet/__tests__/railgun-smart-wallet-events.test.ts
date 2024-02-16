@@ -47,7 +47,7 @@ const testHistoricalEventsForRange = async (startBlock: number, endBlock: number
       const { commitmentType } = event.commitments[0];
       switch (commitmentType) {
         case CommitmentType.LegacyGeneratedCommitment:
-        case CommitmentType.ShieldCommitment:
+        case CommitmentType.EncryptCommitment:
           foundShieldEvents += 1;
           break;
         case CommitmentType.LegacyEncryptedCommitment:

@@ -16,7 +16,7 @@ import {
   CommitmentType,
   LegacyGeneratedCommitment,
   Nullifier,
-  ShieldCommitment,
+  EncryptCommitment,
 } from './models/formatted-types';
 import {
   CommitmentEvent,
@@ -835,10 +835,10 @@ class RailgunEngine extends EventEmitter {
     return wallet;
   }
 
-  async getAllShieldCommitments(
+  async getAllEncryptCommitments(
     chain: Chain,
     startingBlock: number,
-  ): Promise<(ShieldCommitment | LegacyGeneratedCommitment)[]> {
+  ): Promise<(EncryptCommitment | LegacyGeneratedCommitment)[]> {
     const merkletree = this.getMerkletreeForChain(chain);
     const latestTree = await merkletree.latestTree();
 
@@ -851,7 +851,7 @@ class RailgunEngine extends EventEmitter {
       return [];
     }
 
-    const shieldCommitments: (ShieldCommitment | LegacyGeneratedCommitment)[] = [];
+    const encryptCommitments: (EncryptCommitment | LegacyGeneratedCommitment)[] = [];
 
     const startScanTree = treeInfo.tree;
 
@@ -875,14 +875,14 @@ class RailgunEngine extends EventEmitter {
         }
         if (
           leaf.commitmentType === CommitmentType.LegacyGeneratedCommitment ||
-          leaf.commitmentType === CommitmentType.ShieldCommitment
+          leaf.commitmentType === CommitmentType.EncryptCommitment
         ) {
-          shieldCommitments.push(leaf);
+          encryptCommitments.push(leaf);
         }
       });
     }
 
-    return shieldCommitments;
+    return encryptCommitments;
   }
 
   // Top-level exports:

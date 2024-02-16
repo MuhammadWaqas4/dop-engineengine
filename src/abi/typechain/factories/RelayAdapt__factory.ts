@@ -643,7 +643,7 @@ const _abi = [
               },
               {
                 internalType: "bytes32",
-                name: "shieldKey",
+                name: "encryptKey",
                 type: "bytes32",
               },
             ],

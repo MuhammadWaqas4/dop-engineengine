@@ -307,9 +307,9 @@ class RailgunSmartWalletContract extends EventEmitter {
     eventsUnshieldListener: EventsUnshieldListener,
   ): Promise<void> {
     const nullifiedTopic = this.contract.getEvent('Nullified').getFragment().topicHash;
-    const shieldTopic = this.contract.getEvent('Shield').getFragment().topicHash;
+    const shieldTopic = this.contract.getEvent('Encrypt').getFragment().topicHash;
     const transactTopic = this.contract.getEvent('Transact').getFragment().topicHash;
-    const unshieldTopic = this.contract.getEvent('Unshield').getFragment().topicHash;
+    const unshieldTopic = this.contract.getEvent('Decrypt').getFragment().topicHash;
 
     await this.contractForListeners.on(
       // @ts-expect-error - Use * to request all events
@@ -460,10 +460,10 @@ class RailgunSmartWalletContract extends EventEmitter {
     // Current live events - post v3 update
     const eventFilterNullified = this.contract.filters.Nullified();
     const eventFilterTransact = this.contract.filters.Transact();
-    const eventFilterUnshield = this.contract.filters.Unshield();
+    const eventFilterUnshield = this.contract.filters.Decrypt();
 
     // Current live Shield - Mar 2023
-    const eventFilterShield = this.contract.filters.Shield();
+    const eventFilterShield = this.contract.filters.Encrypt();
 
     // This type includes legacy event types and filters, from before the v3 update.
     // We need to scan prior commitments from these past events, before engineV3StartBlockNumber.
@@ -611,7 +611,7 @@ class RailgunSmartWalletContract extends EventEmitter {
    * @returns Populated transaction
    */
   generateShield(shieldRequests: ShieldRequestStruct[]): Promise<ContractTransaction> {
-    return this.contract.shield.populateTransaction(shieldRequests);
+    return this.contract.encrypt.populateTransaction(shieldRequests);
   }
 
   /**

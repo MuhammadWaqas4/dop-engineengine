@@ -3,7 +3,7 @@ import {
   CommitmentCiphertext,
   CommitmentType,
   Nullifier,
-  ShieldCommitment,
+  EncryptCommitment,
   TransactCommitment,
 } from '../../models/formatted-types';
 import { ByteLength, formatToByteLength, nToHex } from '../../utils/bytes';
@@ -31,14 +31,14 @@ import { ABIRailgunSmartWallet_Legacy_PreMar23 } from '../../abi/legacy/abi-lega
 /**
  * Parse event data for database
  */
-export function formatShieldCommitments(
+export function formatEncryptCommitments(
   transactionHash: string,
   preImages: CommitmentPreimageStructOutput[],
   shieldCiphertext: ShieldCiphertextStructOutput[],
   blockNumber: number,
   fees: Optional<bigint[]>,
-): ShieldCommitment[] {
-  const shieldCommitments = preImages.map((commitmentPreImage, index) => {
+): EncryptCommitment[] {
+  const encryptCommitments = preImages.map((commitmentPreImage, index) => {
     const npk = formatToByteLength(commitmentPreImage.npk, ByteLength.UINT_256);
     const tokenData = serializeTokenData(
       commitmentPreImage.token.tokenAddress,
@@ -49,20 +49,20 @@ export function formatShieldCommitments(
     const preImage = serializePreImage(npk, tokenData, value);
     const noteHash = getNoteHash(npk, tokenData, value);
 
-    const commitment: ShieldCommitment = {
-      commitmentType: CommitmentType.ShieldCommitment,
+    const commitment: EncryptCommitment = {
+      commitmentType: CommitmentType.EncryptCommitment,
       hash: nToHex(noteHash, ByteLength.UINT_256),
       txid: formatToByteLength(transactionHash, ByteLength.UINT_256),
       timestamp: undefined,
       blockNumber,
       preImage,
       encryptedBundle: shieldCiphertext[index].encryptedBundle,
-      shieldKey: shieldCiphertext[index].shieldKey,
+      encryptKey: shieldCiphertext[index].encryptKey,
       fee: fees && fees[index] ? fees[index].toString() : undefined,
     };
     return commitment;
   });
-  return shieldCommitments;
+  return encryptCommitments;
 }
 
 export function formatShieldEvent(
@@ -83,7 +83,7 @@ export function formatShieldEvent(
     throw err;
   }
 
-  const formattedCommitments = formatShieldCommitments(
+  const formattedCommitments = formatEncryptCommitments(
     transactionHash,
     commitments,
     shieldCiphertext,

@@ -94,7 +94,7 @@ export abstract class ShieldNote {
       shieldPrivateKey,
     );
 
-    const shieldKey = bytesToHex(await getPublicViewingKey(shieldPrivateKey));
+    const encryptKey = bytesToHex(await getPublicViewingKey(shieldPrivateKey));
 
     // Construct ciphertext
     const ciphertext: ShieldCiphertext = {
@@ -103,7 +103,7 @@ export abstract class ShieldNote {
         hexlify(combine([...encryptedRandom.data, encryptedReceiver.iv]), true),
         hexlify(combine(encryptedReceiver.data), true),
       ],
-      shieldKey: hexlify(shieldKey, true),
+      encryptKey: hexlify(encryptKey, true),
     };
 
     return {

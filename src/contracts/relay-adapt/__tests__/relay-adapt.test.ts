@@ -159,7 +159,7 @@ describe.only('Relay Adapt', function test() {
       const [_, txReceipt] = await Promise.all([
         awaitRailgunSmartWalletEvent(
           railgunSmartWalletContract,
-          railgunSmartWalletContract.contract.filters.Shield(),
+          railgunSmartWalletContract.contract.filters.Encrypt(),
         ),
         tx.wait(),
         promiseTimeout(

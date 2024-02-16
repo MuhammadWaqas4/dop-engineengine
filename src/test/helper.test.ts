@@ -113,7 +113,7 @@ export const awaitRailgunSmartWalletShield = async (
 ) => {
   return awaitRailgunSmartWalletEvent(
     railgunSmartWallet,
-    railgunSmartWallet.contract.filters.Shield(),
+    railgunSmartWallet.contract.filters.Encrypt(),
   );
 };
 
@@ -131,7 +131,7 @@ export const awaitRailgunSmartWalletUnshield = async (
 ) => {
   return awaitRailgunSmartWalletEvent(
     railgunSmartWallet,
-    railgunSmartWallet.contract.filters.Unshield(),
+    railgunSmartWallet.contract.filters.Decrypt(),
   );
 };
 
