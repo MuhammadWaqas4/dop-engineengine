@@ -93,7 +93,7 @@ export class Prover {
   setNativeProverGroth16(nativeProve: NativeProve, circuits: { [name: string]: number }) {
     const circuitIdForInputsOutputs = (inputs: number, outputs: number): number => {
       const circuitString = `${inputs}X${outputs}`;
-      const circuitName = `JOINSPLIT_${circuitString}`;
+      const circuitName = `transfer_${circuitString}`;
       const circuitId = circuits[circuitName];
       if (circuitId == null) {
         throw new Error(`No circuit found for ${circuitString.toLowerCase()}`);
