@@ -1,6 +1,6 @@
 {
   "name": "dop-engineengine",
-  "version": "5.4.4",
+  "version": "5.4.7",
   "description": "Wallet framework for RAILGUN smart contracts and private balances on Ethereum and more.",
   "author": "RAILGUN Contributors",
   "license": "MIT",
@@ -43,7 +43,7 @@
     "browserify-aes": "^1.2.0",
     "buffer-xor": "^2.0.2",
     "chai-as-promised": "^7.1.1",
-    "circomlibjs": "MuhammadWaqas4/circomlibjs#ffjavascrip.0.1.0",
+    "circomlibjs": "hsg88/circomlibjs#ffjavascrip.0.1.0",
     "encoding-down": "^7.1.0",
     "ethereum-cryptography": "^2.0.0",
     "ethers": "github:MuhammadWaqas4/ethers.js#v6.7.6",
