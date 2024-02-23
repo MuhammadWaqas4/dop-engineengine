@@ -146,10 +146,10 @@ describe('Transaction/Transaction Batch', function run() {
   });
 
   it('[HH] Should validate transaction batch outputs', async function test() {
-    if (!isDefined(process.env.RUN_HARDHAT_TESTS)) {
-      this.skip();
-      return;
-    }
+    // if (!isDefined(process.env.RUN_HARDHAT_TESTS)) {
+    //   this.skip();
+    //   return;
+    // }
 
     transactionBatch.addOutput(await makeNote(shieldValue * 6n));
     const txs = await transactionBatch.generateDummyTransactions(prover, wallet, testEncryptionKey);
@@ -342,7 +342,7 @@ describe('Transaction/Transaction Batch', function run() {
     expect(txs4.map((tx) => tx.nullifiers.length)).to.deep.equal([5]);
     expect(txs4.map((tx) => tx.commitments.length)).to.deep.equal([5]);
     expect(txs4.map((tx) => tx.unshieldPreimage.value)).to.deep.equal([shieldValue + 1n]);
-  });
+  })
 
   this.afterAll(async () => {
     if (!isDefined(process.env.RUN_HARDHAT_TESTS)) {

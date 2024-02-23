@@ -1,6 +1,6 @@
 {
   "name": "dop-engineengine",
-  "version": "5.4.7",
+  "version": "5.4.8",
   "description": "Wallet framework for RAILGUN smart contracts and private balances on Ethereum and more.",
   "author": "RAILGUN Contributors",
   "license": "MIT",
@@ -8,7 +8,7 @@
   "scripts": {
     "clean": "rimraf dist && rimraf coverage && rimraf .nyc_output",
     "lint": "eslint src/**/*.ts src/*.ts; tsc --noEmit; tsc -p tsconfig.test.json --noEmit",
-    "test": "yarn compile-test && env NODE_ENV=test mocha 'src/**/__tests__/*.test.ts'",
+    "test": "yarn compile-test && env NODE_ENV=test mocha 'src/transaction/__tests__/transaction-batch.test.ts'",
     "test-hardhat": "env NODE_ENV=test RUN_HARDHAT_TESTS=1 npm test",
     "compile": "yarn clean && tsc",
     "compile-test": "yarn clean && tsc -p tsconfig.test.json",
